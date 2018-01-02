@@ -20,13 +20,10 @@ class ConnectDB():
         self.myconn.close()
         
     def querySelect(self,table, columns, clause = NULL):
-        #print("Entre a query select")
         strQuery="SELECT "+ columns +" FROM "+table 
         
         if clause != NULL:
             strQuery+=" WHERE "+ clause
-        
-        #print(strQuery)
         
         try:
             self.connet()    
