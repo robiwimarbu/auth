@@ -1,7 +1,5 @@
 Flask==0.12.2
 Flask_Restful==0.3.6
-Flask_Cors=0.12.2
+Flask_Cors==0.12.2
 psycopg2==2.7.3.1
-PyGreSQL==5.0.4
-virtualenv==15.1.0
 WTForms==2.1
