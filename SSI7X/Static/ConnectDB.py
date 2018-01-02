@@ -12,9 +12,9 @@ class ConnectDB():
     def connet(self):
         try:
             self.myconn = psycopg2.connect(host = self.hostName, user = self.username, password = self.password, dbname = self.database)
-            print("connect")
+            return True
         except psycopg2.OperationalError as e:
-            print("no connect"+ e )
+            return False
             
     def disconnet(self):
         self.myconn.close()
