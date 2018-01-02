@@ -22,7 +22,7 @@ class AutenticacionUsuarios(Resource):
         print(md5)
         cursor = c.querySelect('ssi.tblogins', 'lgn,cntrsna', "lgn='"+ request.form['usro']+ "' and  cntrsna='"+md5+"'")
         
-        if cursor[0][0]!= '':
+        if cursor :
             session['logged_in'] = True
         else:
             session['logged_in'] = False

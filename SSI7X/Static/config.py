@@ -1,0 +1,11 @@
+UTIL_DS = '/'
+ST_DEBUG = True 
+DB_HOST = "192.168.10.18"
+DB_USER_NAME = "admin"
+DB_PASSWORD = "S0p0rt3"
+DB_NAME = "bdatos_ssi"
+SV_HOST = "127.0.0.1"
+SV_PORT = 5000
+#SV_DIR_IMAGES ="images"
+#TBL_TBUSERS ="prueba.tbusuarios"
+#TBL_EVNT_USERS="prueba.evnt_usuarios"
