@@ -17,7 +17,7 @@ CORS(app) #ALLOW ALL ORIGN BY ALL ROUTES
 
 api = Api( auth, prefix="/login")
 api.add_resource(AutenticacionUsuarios,'/auth')
-#QUE PUTAS PASA no se perro!!
+
 if __name__ == '__main__':
     app.register_blueprint(auth)
     app.register_blueprint(images)
