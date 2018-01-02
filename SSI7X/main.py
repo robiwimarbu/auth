@@ -12,7 +12,7 @@ images = Blueprint('images', __name__, static_folder='/img')
 
 app = Flask(__name__)
 
-#To Do:Verificar la seguridad del cors
+#To Do:Verificar la seguridad del cors 
 CORS(app)
 
 api = Api( auth, prefix="/login")
