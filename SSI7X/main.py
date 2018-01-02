@@ -12,8 +12,8 @@ images = Blueprint('images', __name__, static_folder='/img')
 
 app = Flask(__name__)
 
-#TODO: Check rules for cors
-CORS(app) #ALLOW ALL ORIGN BY ALL ROUTES
+
+CORS(app)
 
 api = Api( auth, prefix="/login")
 api.add_resource(AutenticacionUsuarios,'/auth')
