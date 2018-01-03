@@ -1,6 +1,8 @@
 import psycopg2
 from psycopg2.sql import NULL
+
 import SSI7X.Static.config as mConf
+
 class ConnectDB():
    
     hostName = mConf.DB_HOST
@@ -13,7 +15,7 @@ class ConnectDB():
         try:
             self.myconn = psycopg2.connect(host = self.hostName, user = self.username, password = self.password, dbname = self.database)
             return True
-        except psycopg2.OperationalError as e:
+        except psycopg2.OperationalError as e:  # @UnusedVariable
             return False
             
     def disconnet(self):

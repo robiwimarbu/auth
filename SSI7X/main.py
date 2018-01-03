@@ -1,9 +1,11 @@
-from flask import Flask, Blueprint
-from flask_restful import Api
-from flask_cors import CORS
 import os
-from SSI7X.AuthUsers import AutenticacionUsuarios
+from flask import Flask, Blueprint
+from flask_cors import CORS
+from flask_restful import Api
 import SSI7X.Static.config as conf
+from SSI7X.AuthUsers import AutenticacionUsuarios
+
+
 #ruta para las aciones de home.
 auth = Blueprint('login', __name__)
 
