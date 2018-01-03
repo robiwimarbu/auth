@@ -1,3 +1,8 @@
 ERR_NO_01 = 'Usuario o Contraseña Invalida'
 ERR_NO_02 = 'Debe ingresar su usuario'
 ERR_NO_03 = 'Debe ingresar su contraseña'
+ERR_NO_04 = 'Debe ingresar su nueva contraseña'
+ERR_NO_05 = 'Token invalido'
+ERR_NO_06 = 'El minimo de caracteres perminitidos es  6'
+ERR_NO_07 = 'Su contraseña de contener minimo una caracter en mayuscula'
+ERR_NO_08 = 'Su contraseña de contener minimo un número'
