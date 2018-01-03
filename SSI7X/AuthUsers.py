@@ -9,8 +9,8 @@ import SSI7X.Static.errors as errors
 
 
 class UsuarioAcceso(Form):
-    usro = StringField('Nombre de usuario',[validators.DataRequired(message="Debe ingresar su usuario")])
-    cntrsna = StringField('Cntrasenna de usuario',[validators.DataRequired(message="Debe ingresar su contrasenna")])
+    usro = StringField('Nombre de usuario',[validators.DataRequired(message=errors.ERR_NO_02)])
+    cntrsna = StringField('Cntrasenna de usuario',[validators.DataRequired(message=errors.ERR_NO_03)])
 
 class AutenticacionUsuarios(Resource):
     def post(self):
