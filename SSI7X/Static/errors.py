@@ -1,0 +1,1 @@
+ERR_NO_01 = 'Usuario o Contraseña Invalida'
