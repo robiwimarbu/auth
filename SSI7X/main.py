@@ -25,6 +25,5 @@ if __name__ == '__main__':
     app.register_blueprint(auth)
     app.register_blueprint(images)
     
-    app.secret_key = os.urandom(12)
+    app.secret_key = os.urandom(conf.SS_TKN_SIZE)
     app.run( conf.SV_HOST,conf.SV_PORT,conf.ST_DEBUG)
-    

@@ -21,12 +21,11 @@ class AutenticacionUsuarios(Resource):
         
         c = ConnectDB()
         md5= hashlib.md5(request.form['cntrsna'].encode('utf-8')).hexdigest() 
-        print(md5)
         cursor = c.querySelect('ssi.tblogins', 'lgn,cntrsna', "lgn='"+ request.form['usro']+ "' and  cntrsna='"+md5+"'")
         data=[]
         if cursor :
             session['logged_in'] = True
-            token = os.urandom(12)
+            token = os.urandom(24)
             session['token'] = str(token)
             data.append({"logged_in":session['logged_in'],"token":token})
             return utils.nice_json({"status":"OK","error":"null","session":str(data)})
