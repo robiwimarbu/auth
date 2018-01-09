@@ -3,3 +3,5 @@ Flask_Restful==0.3.6
 Flask_Cors==3.0.3
 psycopg2==2.7.3.1
 WTForms==2.1
+IPy==0.83
+ldap3==2.4
