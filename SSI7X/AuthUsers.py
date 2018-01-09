@@ -37,7 +37,7 @@ class AutenticacionUsuarios(Resource):
         else:
             session['logged_in'] = False
             data.append({"logged_in":session['logged_in'],"token":''})
-            return utils.nice_json({"status":"OK","error":errors.ERR_NO_01,"session":str(data)})
+            return utils.nice_json({"status":"Error","error":errors.ERR_NO_01,"session":str(data)})
 class CmboCntrsna(Resource):
     def post(self):
         u = UsroCmbioCntrsna(request.form)
