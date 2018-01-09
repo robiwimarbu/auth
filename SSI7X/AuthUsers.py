@@ -24,7 +24,7 @@ class AutenticacionUsuarios(Resource):
         utils = Utils()
         if not u.validate():
             #return utils.nice_json({"status":"Error","error":u.errors,"user":"null"})
-            return utils.nice_json({"error":u.errors})
+            return utils.nice_json({"error":u.errors},400)
         c = ConnectDB()
         md5= hashlib.md5(request.form['password'].encode('utf-8')).hexdigest() 
         cursor = c.querySelect(dbConf.DB_SHMA +'.tblogins', 'lgn,cntrsna', "lgn='"+ request.form['username']+ "' and  cntrsna='"+md5+"'")
@@ -35,12 +35,12 @@ class AutenticacionUsuarios(Resource):
             session['token'] = str(token).encode(encoding='utf_8', errors='strict')
             data.append({"logged_in":session['logged_in'],"token":token})
             #return utils.nice_json({"status":"OK","error":"null","access_token ":str(token),"session":str(data)})
-            return utils.nice_json({"access_token":str(token)})
+            return utils.nice_json({"access_token":str(token)},200)
         else:
             session['logged_in'] = False
             data.append({"logged_in":session['logged_in'],"token":''})
             #return utils.nice_json({"status":"Error","error":errors.ERR_NO_01,"session":str(data)})
-            return utils.nice_json({"error":errors.ERR_NO_01})
+            return utils.nice_json({"error":errors.ERR_NO_01},400)
 class CmboCntrsna(Resource):
     def post(self):
         u = UsroCmbioCntrsna(request.form)
