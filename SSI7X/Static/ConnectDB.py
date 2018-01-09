@@ -1,7 +1,7 @@
 import psycopg2
 from psycopg2.sql import NULL
 
-import SSI7X.Static.config as mConf
+import SSI7X.Static.config_DB as mConf
 
 class ConnectDB():
    
