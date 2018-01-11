@@ -9,9 +9,10 @@ from SSI7X.Static.Ldap_connect import Conexion_ldap
 import SSI7X.Static.errors as errors  # @UnresolvedImport
 import SSI7X.Static.labels as labels  # @UnresolvedImport
 import SSI7X.Static.config as conf  # @UnresolvedImport
-import SSI7X.Static.config_DB as dbConf 
+import SSI7X.Static.config_DB as dbConf # @UnresolvedImport
 import socket
 import json
+
 
 
 
@@ -49,11 +50,14 @@ class AutenticacionUsuarios(Resource):
             Cldap = Conexion_ldap()
             VerificaConexion = Cldap.Conexion_ldap(request.form['username'], request.form['password'])
             if VerificaConexion :
-                session['logged_in'] = True
-                token = os.urandom(conf.SS_TKN_SIZE)
-                data = json.loads(json.dumps(self.ObtenerDatosUsuario()[0], indent=2))
-                session[str(token)] = data
-                return utils.nice_json({"access_token":str(token)},200)
+                if self.ObtenerDatosUsuario():
+                    session['logged_in'] = True
+                    token = os.urandom(conf.SS_TKN_SIZE)
+                    data = json.loads(json.dumps(self.ObtenerDatosUsuario()[0], indent=2))
+                    session[str(token)] = data
+                    return utils.nice_json({"access_token":str(token)},200)
+                else:
+                    return utils.nice_json({"error":errors.ERR_NO_09},400) 
             else:
                 session['logged_in'] = False
                 return utils.nice_json({"error":errors.ERR_NO_01},400)
