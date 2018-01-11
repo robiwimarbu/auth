@@ -1,7 +1,7 @@
 import psycopg2
 from psycopg2.sql import NULL
-
 import SSI7X.Static.config_DB as mConf
+from psycopg2.extras import RealDictCursor
 
 class ConnectDB():
    
@@ -29,13 +29,12 @@ class ConnectDB():
         
         try:
             self.connet()    
-            cur = self.myconn.cursor()
+            cur = self.myconn.cursor(cursor_factory=RealDictCursor)
             cur.execute(strQuery)
             r = cur.fetchall()
             self.disconnet()
             return r
         except psycopg2.OperationalError as e:
-            print(strQuery)
             return e
     
     def queryInsert(self,table,objectValues, returnColumn = NULL):
@@ -89,9 +88,9 @@ class ConnectDB():
             cur.execute(strQuery) 
             self.myconn.commit()
             self.disconnet()
-            return 1
+            return True
         except psycopg2.OperationalError as e:
-            return 0
+            return False
         
     def queryDelete(self,table,clause = NULL):
         try:
@@ -106,10 +105,16 @@ class ConnectDB():
             self.disconnet()
             return True
         except psycopg2.OperationalError as e:
-            return False
+            return e
     
     def queryFree(self,strQuery):
-        self.connet()    
-        cur = self.myconn.cursor()
-        cur.execute(strQuery)
-        self.disconnet()
+        if strQuery != NULL:
+            try:
+                self.connet()
+                cur = self.myconn.cursor(cursor_factory=RealDictCursor)
+                cur.execute(strQuery)
+                r = cur.fetchall()
+                self.disconnet()
+                return  r
+            except psycopg2.OperationalError as e:
+                return e
