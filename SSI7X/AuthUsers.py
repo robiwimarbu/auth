@@ -5,13 +5,12 @@ from flask_restful import request, Resource
 from wtforms import Form, validators, StringField
 from SSI7X.Static.ConnectDB import ConnectDB  # @UnresolvedImport
 from SSI7X.Static.Utils import Utils  # @UnresolvedImport
-from SSI7X.Static.Ldap_connect import Conexion_ldap 
+from SSI7X.Static.Ldap_connect import Conexion_ldap # @UnresolvedImport  
 import SSI7X.Static.errors as errors  # @UnresolvedImport
 import SSI7X.Static.labels as labels  # @UnresolvedImport
 import SSI7X.Static.config as conf  # @UnresolvedImport
 import SSI7X.Static.config_DB as dbConf # @UnresolvedImport
-import socket
-import json
+import socket,json
 
 
 
@@ -27,26 +26,29 @@ class UsroCmbioCntrsna(Form):
     tkn = StringField('el token', [validators.DataRequired(message='Falta el token'),validators.Length(min=conf.SS_TKN_SIZE,message=errors.ERR_NO_05)])
     
 class AutenticacionUsuarios(Resource):
+    C = ConnectDB()
+    Utils = Utils()
     def post(self):
         u = UsuarioAcceso(request.form)
-        utils = Utils()
         if not u.validate():
-            return utils.nice_json({"error":u.errors},400)
+            return self.Utils.nice_json({"error":u.errors},400)
         IpUsuario = IP(socket.gethostbyname(socket.gethostname()))
-        if IpUsuario.iptype() == 'PUBLIC':
-            c = ConnectDB()
+        if IpUsuario.iptype() == 'PRIVATE':
             md5= hashlib.md5(request.form['password'].encode('utf-8')).hexdigest() 
-            cursor = c.querySelect(dbConf.DB_SHMA +'.tblogins', 'lgn,cntrsna', "lgn='"+ request.form['username']+ "' and  cntrsna='"+md5+"'")
-            if cursor :
-                session['logged_in'] = True
-                token = os.urandom(conf.SS_TKN_SIZE)
-                data = json.loads(json.dumps(self.ObtenerDatosUsuario()[0], indent=2))
-                session[str(token)] = data
-                return utils.nice_json({"access_token":str(token)},200)
+            Cursor = self.C.querySelect(dbConf.DB_SHMA +'.tblogins', 'lgn,cntrsna', "lgn='"+ request.form['username']+ "' and  cntrsna='"+md5+"'")
+            if Cursor :
+                if type(self.validaUsuario()) is dict:
+                    session['logged_in'] = True
+                    token = os.urandom(conf.SS_TKN_SIZE)
+                    data = json.loads(json.dumps(self.ObtenerDatosUsuario()[0], indent=2))
+                    session[str(token)] = data
+                    return self.Utils.nice_json({"access_token":str(token)},200)
+                else:
+                    return self.validaUsuario()
             else:
                 session['logged_in'] = False
-                return utils.nice_json({"error":errors.ERR_NO_01},400)
-        elif IpUsuario.iptype() == 'PRIVATE':
+                return self.Utils.nice_json({"error":errors.ERR_NO_01},400)
+        elif IpUsuario.iptype() == 'PUBLIC':
             Cldap = Conexion_ldap()
             VerificaConexion = Cldap.Conexion_ldap(request.form['username'], request.form['password'])
             if VerificaConexion :
@@ -55,16 +57,15 @@ class AutenticacionUsuarios(Resource):
                     token = os.urandom(conf.SS_TKN_SIZE)
                     data = json.loads(json.dumps(self.ObtenerDatosUsuario()[0], indent=2))
                     session[str(token)] = data
-                    return utils.nice_json({"access_token":str(token)},200)
+                    return self.Utils.nice_json({"access_token":str(token)},200)
                 else:
-                    return utils.nice_json({"error":errors.ERR_NO_09},400) 
+                    return self.Utils.nice_json({"error":errors.ERR_NO_09},400)
             else:
                 session['logged_in'] = False
-                return utils.nice_json({"error":errors.ERR_NO_01},400)
+                return self.Utils.nice_json({"error":errors.ERR_NO_01},400)
                 
     def ObtenerDatosUsuario(self):
-        c = ConnectDB()
-        cursor = c.queryFree(" select " \
+        cursor = self.C.queryFree(" select " \
                              " case when emplds_une.id is not null then "\
                              " concat_ws("\
                              " ' ',"\
@@ -79,7 +80,8 @@ class AutenticacionUsuarios(Resource):
                              " emplds.crro_elctrnco" \
                              " else" \
                              " prstdr.crro_elctrnco" \
-                             " end as crro_elctrnco" \
+                             " end as crro_elctrnco," \
+                             " lgn_ge.id as id_lgn_ge " \
                              " from ssi7x.tblogins_ge lgn_ge " \
                              " left join ssi7x.tblogins lgn on lgn.id = lgn_ge.id_lgn " \
                              " left join ssi7x.tbempleados_une emplds_une on emplds_une.id_lgn_accso_ge = lgn_ge.id " \
@@ -87,15 +89,50 @@ class AutenticacionUsuarios(Resource):
                              " left join ssi7x.tbprestadores prstdr on prstdr.id_lgn_accso_ge = lgn_ge.id " \
                              " where lgn.lgn = '"+request.form['username']+"'")
         return cursor
+    
             
-        
-        
+    def validaUsuario(self):
+        IdUsuarioGe = json.loads(json.dumps(self.ObtenerDatosUsuario()[0], indent=2))
+        Cursor = self.C.queryFree("SELECT "\
+                                " a.id as id_prfl_scrsl,"\
+                                " b.nmbre_scrsl as nmbre_scrsl,"\
+                                " c.estdo as estdo "\
+                                " FROM ssi7x.tblogins_perfiles_sucursales a"\
+                                " left JOIN  ssi7x.tbsucursales b on a.id_scrsl=b.id"\
+                                " left join ssi7x.tblogins_ge c on c.id = a.id_lgn_ge"\
+                                " WHERE  a.id_lgn_ge = "+str(IdUsuarioGe['id_lgn_ge'])+" and a.mrca_scrsl_dfcto is true")
+        if Cursor :
+            data = json.loads(json.dumps(Cursor[0], indent=2))
+            if data['estdo']:
+                return data
+            else:
+                return self.Utils.nice_json({"error":errors.ERR_NO_11},400)
+        else:
+            return self.Utils.nice_json({"error":errors.ERR_NO_10},400)
+
+
+class  MenuDefectoUsuario(Resource):
+    def post(self):
+        AutenticaUsuarios = AutenticacionUsuarios()
+        id_lgn_prfl_scrsl = AutenticaUsuarios.validaUsuario()
+        C = ConnectDB()
+        Cursor = C.queryFree(" select "\
+                            " b.id_mnu as id ,"\
+                            " c.id_mnu as parent ,"\
+                            " c.dscrpcn , "\
+                            " c.lnk "\
+                            " FROM ssi7x.tblogins_perfiles_menu a INNER JOIN "\
+                            " ssi7x.tbmenu_ge b on a.id_mnu_ge=b.id INNER JOIN "\
+                            " ssi7x.tbmenu c ON b.id_mnu = c.id "\
+                            " where a.estdo=true "\
+                            " and b.estdo=true "\
+                            " and a.id_lgn_prfl_scrsl = "+str(id_lgn_prfl_scrsl['id_prfl_scrsl'])+" ORDER BY "\
+                            " cast(c.ordn as integer)")
+        data = json.loads(json.dumps(Cursor, indent=2))
+        return AutenticaUsuarios.Utils.nice_json(data,200)
         
 class CmboCntrsna(Resource):
     def post(self):
         u = UsroCmbioCntrsna(request.form)
-        utils = Utils()
-        
         if not u.validate():
-            return utils.nice_json({"status":"Error","error":u.errors,"user":"null"})
-        
+            return self.Utils.nice_json({"status":"Error","error":u.errors,"user":"null"})

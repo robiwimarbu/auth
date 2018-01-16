@@ -3,7 +3,8 @@ from flask import Flask, Blueprint
 from flask_cors import CORS
 from flask_restful import Api
 import SSI7X.Static.config as conf  # @UnresolvedImport
-from SSI7X.AuthUsers import AutenticacionUsuarios,CmboCntrsna
+from SSI7X.AuthUsers import CmboCntrsna,AutenticacionUsuarios,MenuDefectoUsuario
+
 
 
 #ruta para las aciones de home.
@@ -18,9 +19,11 @@ app = Flask(__name__)
 # commit luis
 CORS(app)
 
-api = Api( auth, prefix="/login")
+api = Api( auth, prefix="/api")
 api.add_resource(AutenticacionUsuarios,'/auth')
 api.add_resource(CmboCntrsna,'/cambio_password')
+api.add_resource(MenuDefectoUsuario,'/menu')
+
 
 if __name__ == '__main__':
     app.register_blueprint(auth)
