@@ -15,7 +15,6 @@ import socket,json
 
 
 
-
 class UsuarioAcceso(Form):
     username = StringField(labels.lbl_nmbr_usrs,[validators.DataRequired(message=errors.ERR_NO_02)])
     password = StringField(labels.lbl_cntrsna_usrs,[validators.DataRequired(message=errors.ERR_NO_03)])
@@ -136,3 +135,31 @@ class CmboCntrsna(Resource):
         u = UsroCmbioCntrsna(request.form)
         if not u.validate():
             return self.Utils.nice_json({"status":"Error","error":u.errors,"user":"null"})
+        
+class BusquedaImagenUsuario(Resource):
+    C = ConnectDB()
+    Utils = Utils()
+    def post(self):
+        Cursor = self.C.queryFree(" select "\
+                                 " id ,"\
+                                 " lgn ,"\
+                                 " fto_usro,"\
+                                 " nmbre_usro, "\
+                                 " estdo "\
+                                 " from ssi7x.tblogins where lgn = '"+str(request.form['username'])+"'")
+        if Cursor :
+            data = json.loads(json.dumps(Cursor[0], indent=2))
+            if data['estdo']:
+                return self.Utils.nice_json({"error":"null","fto_usro":data['fto_usro']},200)
+            else:
+                return self.Utils.nice_json({"error":errors.ERR_NO_11},400)
+        else:
+            return self.Utils.nice_json({"error":errors.ERR_NO_10},400)
+                                
+        
+       
+        
+        
+        
+        
+        
