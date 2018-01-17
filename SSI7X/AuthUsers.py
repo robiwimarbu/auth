@@ -150,9 +150,9 @@ class BusquedaImagenUsuario(Resource):
         if Cursor :
             data = json.loads(json.dumps(Cursor[0], indent=2))
             if data['estdo']:
-                return self.Utils.nice_json({"error":"null","fto_usro":data['fto_usro']},200)
+                return self.Utils.nice_json({"fto_usro":data['fto_usro']},200)
             else:
-                return self.Utils.nice_json({"error":errors.ERR_NO_11},400)
+                return self.Utils.nice_json({"error":errors.ERR_NO_11,"fto_usro":data['fto_usro']},400)
         else:
             return self.Utils.nice_json({"error":errors.ERR_NO_10},400)
                                 
