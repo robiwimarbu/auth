@@ -29,7 +29,6 @@ class AutenticacionUsuarios(Resource):
    
     def post(self):
         ingreso=False
-        IdUsuarioGe = json.loads(json.dumps(self.ObtenerDatosUsuario()[0], indent=2))
         u = UsuarioAcceso(request.form)
         if not u.validate():
             return self.Utils.nice_json({"error":u.errors},400)
@@ -38,10 +37,10 @@ class AutenticacionUsuarios(Resource):
             md5= hashlib.md5(request.form['password'].encode('utf-8')).hexdigest() 
             Cursor = self.C.querySelect(dbConf.DB_SHMA +'.tblogins', 'lgn,cntrsna', "lgn='"+ request.form['username']+ "' and  cntrsna='"+md5+"'")
             if Cursor :
-                if type(self.validaUsuario()) is dict:
+                if type(self.validaUsuario(request.form['username'])) is dict:
                     ingreso=True                  
                 else:
-                    return self.validaUsuario()
+                    return self.validaUsuario(request.form['username'])
             else:
                 session['logged_in'] = False
                 ingreso               
@@ -49,7 +48,7 @@ class AutenticacionUsuarios(Resource):
             Cldap = Conexion_ldap()
             VerificaConexion = Cldap.Conexion_ldap(request.form['username'], request.form['password'])
             if VerificaConexion :
-                if self.ObtenerDatosUsuario():
+                if self.ObtenerDatosUsuario(request.form['username']):
                     ingreso=True                  
                 else:
                     ingreso         
@@ -58,7 +57,7 @@ class AutenticacionUsuarios(Resource):
                 
         if  ingreso:
             token = secrets.token_hex(conf.SS_TKN_SIZE)
-            data = json.loads(json.dumps(self.ObtenerDatosUsuario()[0], indent=2))
+            data = json.loads(json.dumps(self.ObtenerDatosUsuario(request.form['username'])[0], indent=2))
             session['logged_in'] = True
             session[str(token)] = data
             arrayValues={}
@@ -66,14 +65,14 @@ class AutenticacionUsuarios(Resource):
             arrayValues['ip']=str(IpUsuario)
             arrayValues['key']=token
             arrayValues['dspstvo_accso']=str(device)
-            arrayValues['id_lgn_ge']=str(IdUsuarioGe['id_lgn_ge'])
+            arrayValues['id_lgn_ge']=str(data['id_lgn_ge'])
             self.InsertGestionAcceso(arrayValues)
             return self.Utils.nice_json({"access_token":str(token)},200)
         else:
             session['logged_in'] = False
             return self.Utils.nice_json({"error":errors.ERR_NO_01},400)
                 
-    def ObtenerDatosUsuario(self):
+    def ObtenerDatosUsuario(self,usuario):
         cursor = self.C.queryFree(" select " \
                              " case when emplds_une.id is not null then "\
                              " concat_ws("\
@@ -90,18 +89,19 @@ class AutenticacionUsuarios(Resource):
                              " else" \
                              " prstdr.crro_elctrnco" \
                              " end as crro_elctrnco," \
-                             " lgn_ge.id as id_lgn_ge " \
+                             " lgn_ge.id as id_lgn_ge, " \
+                             " lgn.lgn as lgn " \
                              " from ssi7x.tblogins_ge lgn_ge " \
                              " left join ssi7x.tblogins lgn on lgn.id = lgn_ge.id_lgn " \
                              " left join ssi7x.tbempleados_une emplds_une on emplds_une.id_lgn_accso_ge = lgn_ge.id " \
                              " left join ssi7x.tbempleados emplds on emplds.id = emplds_une.id_empldo " \
                              " left join ssi7x.tbprestadores prstdr on prstdr.id_lgn_accso_ge = lgn_ge.id " \
-                             " where lgn.lgn = '"+request.form['username']+"'")
+                             " where lgn.lgn = '"+usuario+"'")
         return cursor
     
             
-    def validaUsuario(self):
-        IdUsuarioGe = json.loads(json.dumps(self.ObtenerDatosUsuario()[0], indent=2))
+    def validaUsuario(self, usuario):
+        IdUsuarioGe = json.loads(json.dumps(self.ObtenerDatosUsuario(usuario)[0], indent=2))
         Cursor = self.C.queryFree("SELECT "\
                                 " a.id as id_prfl_scrsl,"\
                                 " b.nmbre_scrsl as nmbre_scrsl,"\
@@ -130,23 +130,30 @@ class AutenticacionUsuarios(Resource):
 
 class  MenuDefectoUsuario(Resource):
     def post(self):
+        valida_token = ValidaToken()
         AutenticaUsuarios = AutenticacionUsuarios()
-        id_lgn_prfl_scrsl = AutenticaUsuarios.validaUsuario()
+        token = request.form['data']
+        valida_token = valida_token.ValidacionToken(token) 
         C = ConnectDB()
-        Cursor = C.queryFree(" select "\
-                            " b.id_mnu as id ,"\
-                            " c.id_mnu as parent ,"\
-                            " c.dscrpcn , "\
-                            " c.lnk "\
-                            " FROM ssi7x.tblogins_perfiles_menu a INNER JOIN "\
-                            " ssi7x.tbmenu_ge b on a.id_mnu_ge=b.id INNER JOIN "\
-                            " ssi7x.tbmenu c ON b.id_mnu = c.id "\
-                            " where a.estdo=true "\
-                            " and b.estdo=true "\
-                            " and a.id_lgn_prfl_scrsl = "+str(id_lgn_prfl_scrsl['id_prfl_scrsl'])+" ORDER BY "\
-                            " cast(c.ordn as integer)")
-        data = json.loads(json.dumps(Cursor, indent=2))
-        return AutenticaUsuarios.Utils.nice_json(data,200)
+        if valida_token == True:
+            DatosUsuario = session[token]
+            id_lgn_prfl_scrsl = AutenticaUsuarios.validaUsuario(DatosUsuario['lgn'])
+            Cursor = C.queryFree(" select "\
+                                " b.id_mnu as id ,"\
+                                " c.id_mnu as parent ,"\
+                                " c.dscrpcn , "\
+                                " c.lnk "\
+                                " FROM ssi7x.tblogins_perfiles_menu a INNER JOIN "\
+                                " ssi7x.tbmenu_ge b on a.id_mnu_ge=b.id INNER JOIN "\
+                                " ssi7x.tbmenu c ON b.id_mnu = c.id "\
+                                " where a.estdo=true "\
+                                " and b.estdo=true "\
+                                " and a.id_lgn_prfl_scrsl = "+str(id_lgn_prfl_scrsl['id_prfl_scrsl'])+" ORDER BY "\
+                                " cast(c.ordn as integer)")
+            data = json.loads(json.dumps(Cursor, indent=2))
+            return AutenticaUsuarios.Utils.nice_json(data,200)
+        else:
+            return AutenticaUsuarios.Utils.nice_json({"error":errors.ERR_NO_12},400)
         
 class CmboCntrsna(Resource):
     def post(self):
@@ -160,22 +167,38 @@ class BusquedaImagenUsuario(Resource):
    
     def post(self):
         lc_url = request.url
-        lc_prtcl = urlparse(lc_url)    
-        Cursor = self.C.queryFree(" select "\
-                                 " id ,"\
-                                 " lgn ,"\
-                                 " fto_usro,"\
-                                 " nmbre_usro, "\
-                                 " estdo "\
-                                 " from ssi7x.tblogins where lgn = '"+str(request.form['username'])+"'")
-        if Cursor :
-            data = json.loads(json.dumps(Cursor[0], indent=2))
-            if data['estdo']:
-                if data['fto_usro']:
-                    return self.Utils.nice_json({"fto_usro":lc_prtcl.scheme+'://'+conf.SV_HOST+':'+str(conf.SV_PORT)+'/'+data['fto_usro']},200)
+        lc_prtcl = urlparse(lc_url)  
+        valida_token = ValidaToken()
+        token = request.form['data']
+        valida_token = valida_token.ValidacionToken(token) 
+        
+        if valida_token == True:
+            Cursor = self.C.queryFree(" select "\
+                                     " id ,"\
+                                     " lgn ,"\
+                                     " fto_usro,"\
+                                     " nmbre_usro, "\
+                                     " estdo "\
+                                     " from ssi7x.tblogins where lgn = '"+str(request.form['username'])+"'")
+            if Cursor :
+                data = json.loads(json.dumps(Cursor[0], indent=2))
+                if data['estdo']:
+                    if data['fto_usro']:
+                        return self.Utils.nice_json({"fto_usro":lc_prtcl.scheme+'://'+conf.SV_HOST+':'+str(conf.SV_PORT)+'/'+data['fto_usro']},200)
+                    else:
+                        return self.Utils.nice_json({"fto_usro":"null"},200)
                 else:
-                    return self.Utils.nice_json({"fto_usro":"null"},200)
+                    return self.Utils.nice_json({"error":errors.ERR_NO_11,lc_prtcl.scheme+'://'+"fto_usro":conf.SV_HOST+':'+str(conf.SV_PORT)+'/'+data['fto_usro']},200)
             else:
-                return self.Utils.nice_json({"error":errors.ERR_NO_11,lc_prtcl.scheme+'://'+"fto_usro":conf.SV_HOST+':'+str(conf.SV_PORT)+'/'+data['fto_usro']},200)
+                return self.Utils.nice_json({"error":errors.ERR_NO_10},400)
         else:
-            return self.Utils.nice_json({"error":errors.ERR_NO_10},400)
+            return self.Utils.nice_json({"error":errors.ERR_NO_12},400)
+        
+class ValidaToken(Resource):
+    Utils = Utils()
+    def ValidacionToken(self,token):
+        if token in session:
+            return True
+        else:
+            return False     
+        
