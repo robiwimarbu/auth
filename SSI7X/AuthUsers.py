@@ -5,14 +5,13 @@ from flask_restful import request, Resource
 from wtforms import Form, validators, StringField
 from SSI7X.Static.ConnectDB import ConnectDB  # @UnresolvedImport
 from SSI7X.Static.Utils import Utils  # @UnresolvedImport
-from SSI7X.Static.Ldap_connect import Conexion_ldap # @UnresolvedImport  
+from SSI7X.Static.Ldap_connect import Conexion_ldap # @UnresolvedImport
+from urllib.parse import urlparse
 import SSI7X.Static.errors as errors  # @UnresolvedImport
 import SSI7X.Static.labels as labels  # @UnresolvedImport
 import SSI7X.Static.config as conf  # @UnresolvedImport
 import SSI7X.Static.config_DB as dbConf # @UnresolvedImport
 import socket,json
-
-
 
 
 class UsuarioAcceso(Form):
@@ -32,7 +31,7 @@ class AutenticacionUsuarios(Resource):
         if not u.validate():
             return self.Utils.nice_json({"error":u.errors},400)
         IpUsuario = IP(socket.gethostbyname(socket.gethostname()))
-        if IpUsuario.iptype() == 'PRIVATE':
+        if IpUsuario.iptype() == 'PUBLIC':
             md5= hashlib.md5(request.form['password'].encode('utf-8')).hexdigest() 
             Cursor = self.C.querySelect(dbConf.DB_SHMA +'.tblogins', 'lgn,cntrsna', "lgn='"+ request.form['username']+ "' and  cntrsna='"+md5+"'")
             if Cursor :
@@ -47,7 +46,7 @@ class AutenticacionUsuarios(Resource):
             else:
                 session['logged_in'] = False
                 return self.Utils.nice_json({"error":errors.ERR_NO_01},400)
-        elif IpUsuario.iptype() == 'PUBLIC':
+        elif IpUsuario.iptype() == 'PRIVATE':
             Cldap = Conexion_ldap()
             VerificaConexion = Cldap.Conexion_ldap(request.form['username'], request.form['password'])
             if VerificaConexion :
@@ -139,7 +138,10 @@ class CmboCntrsna(Resource):
 class BusquedaImagenUsuario(Resource):
     C = ConnectDB()
     Utils = Utils()
+   
     def post(self):
+        lc_url = request.url
+        lc_prtcl = urlparse(lc_url)    
         Cursor = self.C.queryFree(" select "\
                                  " id ,"\
                                  " lgn ,"\
@@ -150,9 +152,12 @@ class BusquedaImagenUsuario(Resource):
         if Cursor :
             data = json.loads(json.dumps(Cursor[0], indent=2))
             if data['estdo']:
-                return self.Utils.nice_json({"fto_usro":data['fto_usro']},200)
+                if data['fto_usro']:
+                    return self.Utils.nice_json({"fto_usro":lc_prtcl.scheme+'://'+conf.SV_HOST+':'+str(conf.SV_PORT)+'/'+data['fto_usro']},200)
+                else:
+                    return self.Utils.nice_json({"fto_usro":"null"},200)
             else:
-                return self.Utils.nice_json({"error":errors.ERR_NO_11,"fto_usro":data['fto_usro']},400)
+                return self.Utils.nice_json({"error":errors.ERR_NO_11,lc_prtcl.scheme+'://'+"fto_usro":conf.SV_HOST+':'+str(conf.SV_PORT)+'/'+data['fto_usro']},200)
         else:
             return self.Utils.nice_json({"error":errors.ERR_NO_10},400)
                                 
