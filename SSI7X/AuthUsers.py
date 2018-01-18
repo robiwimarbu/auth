@@ -1,4 +1,4 @@
-import hashlib, os
+import hashlib, os,socket,json,secrets # @UnresolvedImport
 from IPy import IP
 from flask import session
 from flask_restful import request, Resource
@@ -11,7 +11,6 @@ import SSI7X.Static.errors as errors  # @UnresolvedImport
 import SSI7X.Static.labels as labels  # @UnresolvedImport
 import SSI7X.Static.config as conf  # @UnresolvedImport
 import SSI7X.Static.config_DB as dbConf # @UnresolvedImport
-import socket,json,secrets
 from user_agents import parse
 
 
