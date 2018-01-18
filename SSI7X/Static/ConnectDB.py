@@ -40,7 +40,7 @@ class ConnectDB():
     def queryInsert(self,table,objectValues, returnColumn = NULL):
         strColumnNames = ""
         strColumnValues = ""
-        for key, value in objectValues.iteritems():
+        for key, value in objectValues.items():
             strColumnNames += key+ ","
             strColumnValues += "'"+value + "',"
              

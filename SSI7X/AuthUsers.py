@@ -11,7 +11,8 @@ import SSI7X.Static.errors as errors  # @UnresolvedImport
 import SSI7X.Static.labels as labels  # @UnresolvedImport
 import SSI7X.Static.config as conf  # @UnresolvedImport
 import SSI7X.Static.config_DB as dbConf # @UnresolvedImport
-import socket,json
+import socket,json,secrets
+from user_agents import parse
 
 
 class UsuarioAcceso(Form):
@@ -26,7 +27,10 @@ class UsroCmbioCntrsna(Form):
 class AutenticacionUsuarios(Resource):
     C = ConnectDB()
     Utils = Utils()
+   
     def post(self):
+        ingreso=False
+        IdUsuarioGe = json.loads(json.dumps(self.ObtenerDatosUsuario()[0], indent=2))
         u = UsuarioAcceso(request.form)
         if not u.validate():
             return self.Utils.nice_json({"error":u.errors},400)
@@ -36,31 +40,39 @@ class AutenticacionUsuarios(Resource):
             Cursor = self.C.querySelect(dbConf.DB_SHMA +'.tblogins', 'lgn,cntrsna', "lgn='"+ request.form['username']+ "' and  cntrsna='"+md5+"'")
             if Cursor :
                 if type(self.validaUsuario()) is dict:
-                    session['logged_in'] = True
-                    token = os.urandom(conf.SS_TKN_SIZE)
-                    data = json.loads(json.dumps(self.ObtenerDatosUsuario()[0], indent=2))
-                    session[str(token)] = data
-                    return self.Utils.nice_json({"access_token":str(token)},200)
+                    ingreso=True                  
                 else:
                     return self.validaUsuario()
             else:
                 session['logged_in'] = False
-                return self.Utils.nice_json({"error":errors.ERR_NO_01},400)
+                ingreso               
         elif IpUsuario.iptype() == 'PRIVATE':
             Cldap = Conexion_ldap()
             VerificaConexion = Cldap.Conexion_ldap(request.form['username'], request.form['password'])
             if VerificaConexion :
                 if self.ObtenerDatosUsuario():
-                    session['logged_in'] = True
-                    token = os.urandom(conf.SS_TKN_SIZE)
-                    data = json.loads(json.dumps(self.ObtenerDatosUsuario()[0], indent=2))
-                    session[str(token)] = data
-                    return self.Utils.nice_json({"access_token":str(token)},200)
+                    ingreso=True                  
                 else:
-                    return self.Utils.nice_json({"error":errors.ERR_NO_09},400)
+                    ingreso         
             else:
-                session['logged_in'] = False
-                return self.Utils.nice_json({"error":errors.ERR_NO_01},400)
+                ingreso                 
+                
+        if  ingreso:
+            token = secrets.token_hex(conf.SS_TKN_SIZE)
+            data = json.loads(json.dumps(self.ObtenerDatosUsuario()[0], indent=2))
+            session['logged_in'] = True
+            session[str(token)] = data
+            arrayValues={}
+            device=self.DetectarDispositivo() 
+            arrayValues['ip']=str(IpUsuario)
+            arrayValues['key']=token
+            arrayValues['dspstvo_accso']=str(device)
+            arrayValues['id_lgn_ge']=str(IdUsuarioGe['id_lgn_ge'])
+            self.InsertGestionAcceso(arrayValues)
+            return self.Utils.nice_json({"access_token":str(token)},200)
+        else:
+            session['logged_in'] = False
+            return self.Utils.nice_json({"error":errors.ERR_NO_01},400)
                 
     def ObtenerDatosUsuario(self):
         cursor = self.C.queryFree(" select " \
@@ -107,6 +119,14 @@ class AutenticacionUsuarios(Resource):
                 return self.Utils.nice_json({"error":errors.ERR_NO_11},400)
         else:
             return self.Utils.nice_json({"error":errors.ERR_NO_10},400)
+        
+    def DetectarDispositivo(self):
+            str_agente = request.headers.get('User-Agent')
+            dispositivo_usuario = parse(str_agente)
+            return dispositivo_usuario
+        
+    def InsertGestionAcceso(self,objectValues):
+        self.C.queryInsert(dbConf.DB_SHMA+".tbgestion_accesos", objectValues)        
 
 
 class  MenuDefectoUsuario(Resource):
@@ -160,11 +180,3 @@ class BusquedaImagenUsuario(Resource):
                 return self.Utils.nice_json({"error":errors.ERR_NO_11,lc_prtcl.scheme+'://'+"fto_usro":conf.SV_HOST+':'+str(conf.SV_PORT)+'/'+data['fto_usro']},200)
         else:
             return self.Utils.nice_json({"error":errors.ERR_NO_10},400)
-                                
-        
-       
-        
-        
-        
-        
-        
