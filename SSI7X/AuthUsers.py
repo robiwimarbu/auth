@@ -175,32 +175,25 @@ class BusquedaImagenUsuario(Resource):
    
     def post(self):
         lc_url = request.url
-        lc_prtcl = urlparse(lc_url)  
-        valida_token = ValidaToken()
-        token = request.form['data']
-        valida_token = valida_token.ValidacionToken(token) 
-        
-        if valida_token == True:
-            Cursor = self.C.queryFree(" select "\
+        lc_prtcl = urlparse(lc_url)
+        Cursor = self.C.queryFree(" select "\
                                      " id ,"\
                                      " lgn ,"\
                                      " fto_usro,"\
                                      " nmbre_usro, "\
                                      " estdo "\
                                      " from ssi7x.tblogins where lgn = '"+str(request.form['username'])+"'")
-            if Cursor :
-                data = json.loads(json.dumps(Cursor[0], indent=2))
-                if data['estdo']:
-                    if data['fto_usro']:
-                        return self.Utils.nice_json({"fto_usro":lc_prtcl.scheme+'://'+conf.SV_HOST+':'+str(conf.SV_PORT)+'/'+data['fto_usro']},200)
-                    else:
-                        return self.Utils.nice_json({"fto_usro":"null"},200)
+        if Cursor :
+            data = json.loads(json.dumps(Cursor[0], indent=2))
+            if data['estdo']:
+                if data['fto_usro']:
+                    return self.Utils.nice_json({"fto_usro":lc_prtcl.scheme+'://'+conf.SV_HOST+':'+str(conf.SV_PORT)+'/'+data['fto_usro']},200)
                 else:
-                    return self.Utils.nice_json({"error":errors.ERR_NO_11,lc_prtcl.scheme+'://'+"fto_usro":conf.SV_HOST+':'+str(conf.SV_PORT)+'/'+data['fto_usro']},200)
+                    return self.Utils.nice_json({"fto_usro":"null"},200)
             else:
-                return self.Utils.nice_json({"error":errors.ERR_NO_10},400)
+                return self.Utils.nice_json({"error":errors.ERR_NO_11,lc_prtcl.scheme+'://'+"fto_usro":conf.SV_HOST+':'+str(conf.SV_PORT)+'/'+data['fto_usro']},200)
         else:
-            return self.Utils.nice_json({"error":errors.ERR_NO_12},400)
+            return self.Utils.nice_json({"error":errors.ERR_NO_10},400)
         
 class ValidaToken(Resource):
     Utils = Utils()
