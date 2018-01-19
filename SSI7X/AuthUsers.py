@@ -53,7 +53,7 @@ class AutenticacionUsuarios(Resource):
                 else:
                     ingreso         
             else:
-                ingreso                 
+                ingreso#que doble hp                 
                 
         if  ingreso:
             token = secrets.token_hex(conf.SS_TKN_SIZE)
@@ -133,27 +133,30 @@ class  MenuDefectoUsuario(Resource):
         valida_token = ValidaToken()
         AutenticaUsuarios = AutenticacionUsuarios()
         token = request.form['data']
-        valida_token = valida_token.ValidacionToken(token) 
-        C = ConnectDB()
-        if valida_token == True:
-            DatosUsuario = session[token]
-            id_lgn_prfl_scrsl = AutenticaUsuarios.validaUsuario(DatosUsuario['lgn'])
-            Cursor = C.queryFree(" select "\
-                                " b.id_mnu as id ,"\
-                                " c.id_mnu as parent ,"\
-                                " c.dscrpcn , "\
-                                " c.lnk "\
-                                " FROM ssi7x.tblogins_perfiles_menu a INNER JOIN "\
-                                " ssi7x.tbmenu_ge b on a.id_mnu_ge=b.id INNER JOIN "\
-                                " ssi7x.tbmenu c ON b.id_mnu = c.id "\
-                                " where a.estdo=true "\
-                                " and b.estdo=true "\
-                                " and a.id_lgn_prfl_scrsl = "+str(id_lgn_prfl_scrsl['id_prfl_scrsl'])+" ORDER BY "\
-                                " cast(c.ordn as integer)")
-            data = json.loads(json.dumps(Cursor, indent=2))
-            return AutenticaUsuarios.Utils.nice_json(data,200)
+        if token:
+            valida_token = valida_token.ValidacionToken(token) 
+            C = ConnectDB()
+            if valida_token == True:
+                DatosUsuario = session[token]
+                id_lgn_prfl_scrsl = AutenticaUsuarios.validaUsuario(DatosUsuario['lgn'])
+                Cursor = C.queryFree(" select "\
+                                    " b.id_mnu as id ,"\
+                                    " c.id_mnu as parent ,"\
+                                    " c.dscrpcn , "\
+                                    " c.lnk "\
+                                    " FROM ssi7x.tblogins_perfiles_menu a INNER JOIN "\
+                                    " ssi7x.tbmenu_ge b on a.id_mnu_ge=b.id INNER JOIN "\
+                                    " ssi7x.tbmenu c ON b.id_mnu = c.id "\
+                                    " where a.estdo=true "\
+                                    " and b.estdo=true "\
+                                    " and a.id_lgn_prfl_scrsl = "+str(id_lgn_prfl_scrsl['id_prfl_scrsl'])+" ORDER BY "\
+                                    " cast(c.ordn as integer)")
+                data = json.loads(json.dumps(Cursor, indent=2))
+                return AutenticaUsuarios.Utils.nice_json(data,200)
+            else:
+                return AutenticaUsuarios.Utils.nice_json({"error":errors.ERR_NO_12},400)
         else:
-            return AutenticaUsuarios.Utils.nice_json({"error":errors.ERR_NO_12},400)
+            return AutenticaUsuarios.Utils.nice_json({"error":errors.ERR_NO_13},400)
         
 class CmboCntrsna(Resource):
     def post(self):
