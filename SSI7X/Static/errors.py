@@ -11,3 +11,4 @@ ERR_NO_09 = 'El usuario no tiene permitido acceder, '+ERR_NO_00
 ERR_NO_10 = 'El usuario no tiene un Perfil Asignado '+ERR_NO_00
 ERR_NO_11 = 'Usuario Inactivo '+ERR_NO_00
 ERR_NO_12 = 'No se encuentra la sesión en el servidor'
+ERR_NO_13 = 'Sin Parametros'
