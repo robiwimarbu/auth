@@ -151,12 +151,17 @@ class  MenuDefectoUsuario(Resource):
                                     " and b.estdo=true "\
                                     " and a.id_lgn_prfl_scrsl = "+str(id_lgn_prfl_scrsl['id_prfl_scrsl'])+" ORDER BY "\
                                     " cast(c.ordn as integer)")
-                data = json.loads(json.dumps(Cursor, indent=2))
-                return AutenticaUsuarios.Utils.nice_json(data,200)
+                if Cursor :    
+                    data = json.loads(json.dumps(Cursor, indent=2))
+                    return AutenticaUsuarios.Utils.nice_json(data,200)
+                else:
+                    return AutenticaUsuarios.Utils.nice_json({"error":errors.ERR_NO_14},400)
             else:
                 return AutenticaUsuarios.Utils.nice_json({"error":errors.ERR_NO_12},400)
+            
         else:
             return AutenticaUsuarios.Utils.nice_json({"error":errors.ERR_NO_13},400)
+        
         
 class CmboCntrsna(Resource):
     def post(self):
