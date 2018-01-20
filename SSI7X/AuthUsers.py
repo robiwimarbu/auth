@@ -13,7 +13,7 @@ import SSI7X.Static.config as conf  # @UnresolvedImport
 import SSI7X.Static.config_DB as dbConf # @UnresolvedImport
 from user_agents import parse
 
-
+mySession={}
 class UsuarioAcceso(Form):
     username = StringField(labels.lbl_nmbr_usrs,[validators.DataRequired(message=errors.ERR_NO_02)])
     password = StringField(labels.lbl_cntrsna_usrs,[validators.DataRequired(message=errors.ERR_NO_03)])
@@ -26,10 +26,10 @@ class UsroCmbioCntrsna(Form):
 class AutenticacionUsuarios(Resource):
     C = ConnectDB()
     Utils = Utils()
-   
     def post(self):
         ingreso=False
         u = UsuarioAcceso(request.form)
+        #print(request.headers)
         if not u.validate():
             return self.Utils.nice_json({"error":u.errors},400)
         IpUsuario = IP(socket.gethostbyname(socket.gethostname()))
@@ -42,7 +42,7 @@ class AutenticacionUsuarios(Resource):
                 else:
                     return self.validaUsuario(request.form['username'])
             else:
-                session['logged_in'] = False
+                #session['logged_in'] = False
                 ingreso               
         elif IpUsuario.iptype() == 'PRIVATE':
             Cldap = Conexion_ldap()
@@ -58,8 +58,10 @@ class AutenticacionUsuarios(Resource):
         if  ingreso:
             token = secrets.token_hex(conf.SS_TKN_SIZE)
             data = json.loads(json.dumps(self.ObtenerDatosUsuario(request.form['username'])[0], indent=2))
-            session['logged_in'] = True
+            #session['logged_in'] = True
+            mySession[str(token)]=data
             session[str(token)] = data
+            print(mySession)
             arrayValues={}
             device=self.DetectarDispositivo() 
             arrayValues['ip']=str(IpUsuario)
@@ -67,12 +69,15 @@ class AutenticacionUsuarios(Resource):
             arrayValues['dspstvo_accso']=str(device)
             arrayValues['id_lgn_ge']=str(data['id_lgn_ge'])
             self.InsertGestionAcceso(arrayValues)
+            #print(token)
+            #print("--------------------------------------")
             return self.Utils.nice_json({"access_token":str(token)},200)
         else:
             session['logged_in'] = False
             return self.Utils.nice_json({"error":errors.ERR_NO_01},400)
                 
     def ObtenerDatosUsuario(self,usuario):
+        print("obtener "+ usuario )
         cursor = self.C.queryFree(" select " \
                              " case when emplds_une.id is not null then "\
                              " concat_ws("\
@@ -101,15 +106,18 @@ class AutenticacionUsuarios(Resource):
     
             
     def validaUsuario(self, usuario):
+        print(usuario)
         IdUsuarioGe = json.loads(json.dumps(self.ObtenerDatosUsuario(usuario)[0], indent=2))
-        Cursor = self.C.queryFree("SELECT "\
+        strQuery = "SELECT "\
                                 " a.id as id_prfl_scrsl,"\
                                 " b.nmbre_scrsl as nmbre_scrsl,"\
                                 " c.estdo as estdo "\
                                 " FROM ssi7x.tblogins_perfiles_sucursales a"\
                                 " left JOIN  ssi7x.tbsucursales b on a.id_scrsl=b.id"\
                                 " left join ssi7x.tblogins_ge c on c.id = a.id_lgn_ge"\
-                                " WHERE  a.id_lgn_ge = "+str(IdUsuarioGe['id_lgn_ge'])+" and a.mrca_scrsl_dfcto is true")
+                                " WHERE  a.id_lgn_ge = "+str(IdUsuarioGe['id_lgn_ge'])+" and a.mrca_scrsl_dfcto is true"
+        Cursor = self.C.queryFree(strQuery)
+        
         if Cursor :
             data = json.loads(json.dumps(Cursor[0], indent=2))
             if data['estdo']:
@@ -130,15 +138,18 @@ class AutenticacionUsuarios(Resource):
 
 class  MenuDefectoUsuario(Resource):
     def post(self):
+        #print(request.form['data'])
         valida_token = ValidaToken()
         AutenticaUsuarios = AutenticacionUsuarios()
         token = request.form['data']
         if token:
             valida_token = valida_token.ValidacionToken(token) 
             C = ConnectDB()
-            if valida_token == True:
-                DatosUsuario = session[token]
-                id_lgn_prfl_scrsl = AutenticaUsuarios.validaUsuario(DatosUsuario['lgn'])
+            if valida_token :
+                DatosUsuario = mySession.get(token)
+                print(DatosUsuario.get('lgn'))
+                id_lgn_prfl_scrsl = AutenticaUsuarios.validaUsuario(DatosUsuario.get('lgn'))
+               
                 Cursor = C.queryFree(" select "\
                                     " b.id_mnu as id ,"\
                                     " c.id_mnu as parent ,"\
@@ -201,7 +212,7 @@ class BusquedaImagenUsuario(Resource):
 class ValidaToken(Resource):
     Utils = Utils()
     def ValidacionToken(self,token):
-        if token in session:
+        if mySession.get(token):
             return True
         else:
             return False     

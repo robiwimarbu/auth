@@ -1,4 +1,5 @@
 import json
+from flask import session
 from flask import make_response
 class Utils:
     def nice_json(self,arg, status):

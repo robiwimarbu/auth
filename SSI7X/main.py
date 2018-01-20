@@ -17,7 +17,7 @@ app = Flask(__name__)
 
 #To Do:Verificar la seguridad del cors  
 # commit luis
-CORS(app)
+CORS(app, origins="*", allow_headers=["Content-Type", "Authorization", "Access-Control-Allow-Credentials"],supports_credentials=True)
 
 api = Api( auth, prefix="/api")
 api.add_resource(AutenticacionUsuarios,'/auth')
