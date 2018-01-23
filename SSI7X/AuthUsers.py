@@ -1,6 +1,6 @@
 import hashlib, os,socket,json,secrets # @UnresolvedImport
 from IPy import IP
-from flask import session
+from flask import session,make_response
 from flask_restful import request, Resource
 from wtforms import Form, validators, StringField
 from SSI7X.Static.ConnectDB import ConnectDB  # @UnresolvedImport
@@ -12,8 +12,9 @@ import SSI7X.Static.labels as labels  # @UnresolvedImport
 import SSI7X.Static.config as conf  # @UnresolvedImport
 import SSI7X.Static.config_DB as dbConf # @UnresolvedImport
 from user_agents import parse
+import jwt #@UnresolvedImport
+from _codecs import decode
 
-mySession={}
 class UsuarioAcceso(Form):
     username = StringField(labels.lbl_nmbr_usrs,[validators.DataRequired(message=errors.ERR_NO_02)])
     password = StringField(labels.lbl_cntrsna_usrs,[validators.DataRequired(message=errors.ERR_NO_03)])
@@ -53,31 +54,28 @@ class AutenticacionUsuarios(Resource):
                 else:
                     ingreso         
             else:
-                ingreso#que doble hp                 
+                ingreso                 
                 
         if  ingreso:
-            token = secrets.token_hex(conf.SS_TKN_SIZE)
             data = json.loads(json.dumps(self.ObtenerDatosUsuario(request.form['username'])[0], indent=2))
-            #session['logged_in'] = True
-            mySession[str(token)]=data
-            session[str(token)] = data
-            print(mySession)
+            token = jwt.encode(data, conf.SS_TKN_SCRET_KEY, algorithm='HS256').decode('utf-8')
             arrayValues={}
             device=self.DetectarDispositivo() 
             arrayValues['ip']=str(IpUsuario)
-            arrayValues['key']=token
             arrayValues['dspstvo_accso']=str(device)
             arrayValues['id_lgn_ge']=str(data['id_lgn_ge'])
             self.InsertGestionAcceso(arrayValues)
-            #print(token)
-            #print("--------------------------------------")
-            return self.Utils.nice_json({"access_token":str(token)},200)
+            response = make_response( '{"access_token":"'+str(token)+'"}',200)
+            response.headers['Content-type'] = "application/json"
+            response.headers['charset']="utf-8"
+            response.headers["Access-Control-Allow-Origin"]= "*"
+            response.headers["Set-cookie"]=str(token)
+            return response
         else:
-            session['logged_in'] = False
             return self.Utils.nice_json({"error":errors.ERR_NO_01},400)
                 
     def ObtenerDatosUsuario(self,usuario):
-        print("obtener "+ usuario )
+        #print("obtener "+ usuario )
         cursor = self.C.queryFree(" select " \
                              " case when emplds_une.id is not null then "\
                              " concat_ws("\
@@ -106,16 +104,15 @@ class AutenticacionUsuarios(Resource):
     
             
     def validaUsuario(self, usuario):
-        print(usuario)
         IdUsuarioGe = json.loads(json.dumps(self.ObtenerDatosUsuario(usuario)[0], indent=2))
         strQuery = "SELECT "\
-                                " a.id as id_prfl_scrsl,"\
-                                " b.nmbre_scrsl as nmbre_scrsl,"\
-                                " c.estdo as estdo "\
-                                " FROM ssi7x.tblogins_perfiles_sucursales a"\
-                                " left JOIN  ssi7x.tbsucursales b on a.id_scrsl=b.id"\
-                                " left join ssi7x.tblogins_ge c on c.id = a.id_lgn_ge"\
-                                " WHERE  a.id_lgn_ge = "+str(IdUsuarioGe['id_lgn_ge'])+" and a.mrca_scrsl_dfcto is true"
+                    " a.id as id_prfl_scrsl,"\
+                    " b.nmbre_scrsl as nmbre_scrsl,"\
+                    " c.estdo as estdo "\
+                    " FROM ssi7x.tblogins_perfiles_sucursales a"\
+                    " left JOIN  ssi7x.tbsucursales b on a.id_scrsl=b.id"\
+                    " left join ssi7x.tblogins_ge c on c.id = a.id_lgn_ge"\
+                    " WHERE  a.id_lgn_ge = "+str(IdUsuarioGe['id_lgn_ge'])+" and a.mrca_scrsl_dfcto is true"
         Cursor = self.C.queryFree(strQuery)
         
         if Cursor :
@@ -138,18 +135,19 @@ class AutenticacionUsuarios(Resource):
 
 class  MenuDefectoUsuario(Resource):
     def post(self):
-        #print(request.form['data'])
         valida_token = ValidaToken()
         AutenticaUsuarios = AutenticacionUsuarios()
-        token = request.form['data']
+        token = request.headers['Authorization']
         if token:
             valida_token = valida_token.ValidacionToken(token) 
             C = ConnectDB()
             if valida_token :
-                DatosUsuario = mySession.get(token)
-                print(DatosUsuario.get('lgn'))
-                id_lgn_prfl_scrsl = AutenticaUsuarios.validaUsuario(DatosUsuario.get('lgn'))
-               
+                DatosUsuario = jwt.decode(token, conf.SS_TKN_SCRET_KEY, 'utf-8')
+                id_lgn_prfl_scrsl = AutenticaUsuarios.validaUsuario(DatosUsuario['lgn'])
+                
+                if type(id_lgn_prfl_scrsl) is not dict:
+                    return id_lgn_prfl_scrsl
+                
                 Cursor = C.queryFree(" select "\
                                     " b.id_mnu as id ,"\
                                     " c.id_mnu as parent ,"\
@@ -212,8 +210,9 @@ class BusquedaImagenUsuario(Resource):
 class ValidaToken(Resource):
     Utils = Utils()
     def ValidacionToken(self,token):
-        if mySession.get(token):
+        try:
+            decode = jwt.decode(token, conf.SS_TKN_SCRET_KEY, 'utf-8')
             return True
-        else:
-            return False     
+        except jwt.exceptions.ExpiredSignatureError:
+            return  False     
         
