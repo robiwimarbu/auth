@@ -1,6 +1,6 @@
-import hashlib, os,socket,json,secrets # @UnresolvedImport
+import hashlib,socket,json # @UnresolvedImport
 from IPy import IP
-from flask import session,make_response
+from flask import make_response
 from flask_restful import request, Resource
 from wtforms import Form, validators, StringField
 from SSI7X.Static.ConnectDB import ConnectDB  # @UnresolvedImport
@@ -38,21 +38,25 @@ class AutenticacionUsuarios(Resource):
             md5= hashlib.md5(request.form['password'].encode('utf-8')).hexdigest() 
             Cursor = self.C.querySelect(dbConf.DB_SHMA +'.tblogins', 'lgn,cntrsna', "lgn='"+ request.form['username']+ "' and  cntrsna='"+md5+"'")
             if Cursor :
+                print('si accedi perro cursor')
                 if type(self.validaUsuario(request.form['username'])) is dict:
+                    print('si accedi perro')
                     ingreso=True                  
                 else:
                     return self.validaUsuario(request.form['username'])
             else:
-                #session['logged_in'] = False
                 ingreso               
         elif IpUsuario.iptype() == 'PRIVATE':
             Cldap = Conexion_ldap()
             VerificaConexion = Cldap.Conexion_ldap(request.form['username'], request.form['password'])
             if VerificaConexion :
-                if self.ObtenerDatosUsuario(request.form['username']):
+                print('si accedi perro ldap')
+                if type(self.validaUsuario(request.form['username'])) is dict:
+                    print('si tengo todas las cositas para acceder papu :D')
                     ingreso=True                  
                 else:
-                    ingreso         
+                    error = str(self.validaUsuario(request.form['username']))
+                    return self.Utils.nice_json({"error":error},400)    
             else:
                 ingreso                 
                 
@@ -75,7 +79,6 @@ class AutenticacionUsuarios(Resource):
             return self.Utils.nice_json({"error":errors.ERR_NO_01},400)
                 
     def ObtenerDatosUsuario(self,usuario):
-        #print("obtener "+ usuario )
         cursor = self.C.queryFree(" select " \
                              " case when emplds_une.id is not null then "\
                              " concat_ws("\
@@ -120,9 +123,9 @@ class AutenticacionUsuarios(Resource):
             if data['estdo']:
                 return data
             else:
-                return self.Utils.nice_json({"error":errors.ERR_NO_11},400)
+                return errors.ERR_NO_11
         else:
-            return self.Utils.nice_json({"error":errors.ERR_NO_10},400)
+            return errors.ERR_NO_10
         
     def DetectarDispositivo(self):
             str_agente = request.headers.get('User-Agent')
@@ -164,12 +167,12 @@ class  MenuDefectoUsuario(Resource):
                     data = json.loads(json.dumps(Cursor, indent=2))
                     return AutenticaUsuarios.Utils.nice_json(data,200)
                 else:
-                    return AutenticaUsuarios.Utils.nice_json({"error":errors.ERR_NO_14},400)
+                    return AutenticaUsuarios.Utils.nice_json({"error":errors.ERR_NO_USRO_SN_MNU},400)
             else:
                 return AutenticaUsuarios.Utils.nice_json({"error":errors.ERR_NO_12},400)
             
         else:
-            return AutenticaUsuarios.Utils.nice_json({"error":errors.ERR_NO_13},400)
+            return AutenticaUsuarios.Utils.nice_json({"error":errors.ERR_NO_SN_PRMTRS},400)
         
         
 class CmboCntrsna(Resource):
@@ -196,14 +199,14 @@ class BusquedaImagenUsuario(Resource):
             data = json.loads(json.dumps(Cursor[0], indent=2))
             if data['estdo']:
                 if data['fto_usro']:
-                    return self.Utils.nice_json({"fto_usro":data['fto_usro']},200)
-                    #return self.Utils.nice_json({"fto_usro":lc_prtcl.scheme+'://'+conf.SV_HOST+':'+str(conf.SV_PORT)+'/'+data['fto_usro']},200)
+                    #return self.Utils.nice_json({"fto_usro":data['fto_usro']},200)
+                    return self.Utils.nice_json({"fto_usro":lc_prtcl.scheme+'://'+conf.SV_HOST+':'+str(conf.SV_PORT)+'/'+data['fto_usro']},200)
                 else:
-                    return self.Utils.nice_json({"fto_usro":data['fto_usro']},200)
-                    #return self.Utils.nice_json({"fto_usro":"null"},200)
+                    #return self.Utils.nice_json({"fto_usro":data['fto_usro']},200)
+                    return self.Utils.nice_json({"fto_usro":"null"},200)
             else:
-                return self.Utils.nice_json({"error":errors.ERR_NO_11,"fto_usro":data['fto_usro']},200)
-                #return self.Utils.nice_json({"error":errors.ERR_NO_11,lc_prtcl.scheme+'://'+"fto_usro":conf.SV_HOST+':'+str(conf.SV_PORT)+'/'+data['fto_usro']},200)
+                #return self.Utils.nice_json({"error":errors.ERR_NO_11,"fto_usro":data['fto_usro']},200)
+                return self.Utils.nice_json({"error":errors.ERR_NO_11,lc_prtcl.scheme+'://'+"fto_usro":conf.SV_HOST+':'+str(conf.SV_PORT)+'/'+data['fto_usro']},200)
         else:
             return self.Utils.nice_json({"error":errors.ERR_NO_10},400)
         
