@@ -1,3 +1,4 @@
+#Errores controlados de el sistema
 ERR_NO_CMNQS_ADMNSTDR_STMA = "comuníquese con el administrador del sistema."
 ERR_NO_USRO_CNTSN_INVLD = 'Usuario o Contraseña Invalida'
 ERR_NO_INGSA_USRO = 'Debe ingresar su usuario'
