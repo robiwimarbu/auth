@@ -198,13 +198,10 @@ class BusquedaImagenUsuario(Resource):
             data = json.loads(json.dumps(Cursor[0], indent=2))
             if data['estdo']:
                 if data['fto_usro']:
-                    #return self.Utils.nice_json({"fto_usro":data['fto_usro']},200)
                     return self.Utils.nice_json({"fto_usro":lc_prtcl.scheme+'://'+conf.SV_HOST+':'+str(conf.SV_PORT)+'/'+data['fto_usro']},200)
                 else:
-                    #return self.Utils.nice_json({"fto_usro":data['fto_usro']},200)
                     return self.Utils.nice_json({"fto_usro":"null"},200)
             else:
-                #return self.Utils.nice_json({"error":errors.ERR_NO_11,"fto_usro":data['fto_usro']},200)
                 return self.Utils.nice_json({"error":errors.ERR_NO_TNE_PRFL,lc_prtcl.scheme+'://'+"fto_usro":conf.SV_HOST+':'+str(conf.SV_PORT)+'/'+data['fto_usro']},200)
         else:
             return self.Utils.nice_json({"error":errors.ERR_NO_TNE_PRMTDO_ACCDR},400)
