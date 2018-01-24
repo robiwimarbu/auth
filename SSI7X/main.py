@@ -4,6 +4,7 @@ from flask_restful import Api
 import SSI7X.Static.config as conf  # @UnresolvedImport
 from SSI7X.AuthUsers import CmboCntrsna,AutenticacionUsuarios,MenuDefectoUsuario,BusquedaImagenUsuario
 from SSI7X.perfiles import CrearPerfil
+from SSI7X.Users import Usuarios
 
 
 
@@ -26,7 +27,7 @@ api.add_resource(CmboCntrsna,'/cambio_password')
 api.add_resource(MenuDefectoUsuario,'/menu')
 api.add_resource(BusquedaImagenUsuario,'/imagen_usuario')
 api.add_resource(CrearPerfil,'/perfiles')
-
+api.add_resource(Usuarios,'/listar_usuarios')
 
 if __name__ == '__main__':
     app.register_blueprint(auth)
