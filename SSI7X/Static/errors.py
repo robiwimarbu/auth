@@ -13,3 +13,5 @@ ERR_NO_11 = 'Usuario Inactivo '+ERR_NO_00
 ERR_NO_12 = 'No se encuentra la sesión en el servidor'
 ERR_NO_13 = 'Sin Parametros'
 ERR_NO_14 = 'Su Usuario No Cuenta con un Menu Asignado '+ERR_NO_00
+ERR_NO_Cdgo = 'Codigo Debe Contener Datos' 
+ERR_NO_Dscrpcn = 'Descripcion Debe Contener Datos'

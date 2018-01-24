@@ -4,6 +4,7 @@ from flask_cors import CORS
 from flask_restful import Api
 import SSI7X.Static.config as conf  # @UnresolvedImport
 from SSI7X.AuthUsers import CmboCntrsna,AutenticacionUsuarios,MenuDefectoUsuario,BusquedaImagenUsuario
+from SSI7X.perfiles import CrearPerfil
 
 
 
@@ -24,6 +25,7 @@ api.add_resource(AutenticacionUsuarios,'/auth')
 api.add_resource(CmboCntrsna,'/cambio_password')
 api.add_resource(MenuDefectoUsuario,'/menu')
 api.add_resource(BusquedaImagenUsuario,'/imagen_usuario')
+api.add_resource(CrearPerfil,'/perfiles')
 
 
 if __name__ == '__main__':
