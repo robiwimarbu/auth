@@ -1,6 +1,6 @@
 import hashlib,socket,json # @UnresolvedImport
 from IPy import IP
-from flask import make_response
+from flask import make_response # @UnresolvedImpor
 from flask_restful import request, Resource
 from wtforms import Form, validators, StringField
 from SSI7X.Static.ConnectDB import ConnectDB  # @UnresolvedImport
@@ -30,7 +30,6 @@ class AutenticacionUsuarios(Resource):
     def post(self):
         ingreso=False
         u = UsuarioAcceso(request.form)
-        #print(request.headers)
         if not u.validate():
             return self.Utils.nice_json({"error":u.errors},400)
         IpUsuario = IP(socket.gethostbyname(socket.gethostname()))
@@ -76,7 +75,7 @@ class AutenticacionUsuarios(Resource):
             response.headers["Set-cookie"]=str(token)
             return response
         else:
-            return self.Utils.nice_json({"error":errors.ERR_NO_01},400)
+            return self.Utils.nice_json({"error":errors.ERR_NO_USRO_CNTSN_INVLD},400)
                 
     def ObtenerDatosUsuario(self,usuario):
         cursor = self.C.queryFree(" select " \
@@ -137,7 +136,7 @@ class AutenticacionUsuarios(Resource):
 
 
 class  MenuDefectoUsuario(Resource):
-    def post(self):
+    def post(self): 
         valida_token = ValidaToken()
         AutenticaUsuarios = AutenticacionUsuarios()
         token = request.headers['Authorization']
