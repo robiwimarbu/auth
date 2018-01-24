@@ -37,9 +37,7 @@ class AutenticacionUsuarios(Resource):
             md5= hashlib.md5(request.form['password'].encode('utf-8')).hexdigest() 
             Cursor = self.C.querySelect(dbConf.DB_SHMA +'.tblogins', 'lgn,cntrsna', "lgn='"+ request.form['username']+ "' and  cntrsna='"+md5+"'")
             if Cursor :
-                print('si accedi perro cursor')
                 if type(self.validaUsuario(request.form['username'])) is dict:
-                    print('si accedi perro')
                     ingreso=True                  
                 else:
                     return self.validaUsuario(request.form['username'])
@@ -49,9 +47,7 @@ class AutenticacionUsuarios(Resource):
             Cldap = Conexion_ldap()
             VerificaConexion = Cldap.Conexion_ldap(request.form['username'], request.form['password'])
             if VerificaConexion :
-                print('si accedi perro ldap')
                 if type(self.validaUsuario(request.form['username'])) is dict:
-                    print('si tengo todas las cositas para acceder papu :D')
                     ingreso=True                  
                 else:
                     error = str(self.validaUsuario(request.form['username']))
@@ -198,11 +194,11 @@ class BusquedaImagenUsuario(Resource):
             data = json.loads(json.dumps(Cursor[0], indent=2))
             if data['estdo']:
                 if data['fto_usro']:
-                    return self.Utils.nice_json({"fto_usro":lc_prtcl.scheme+'://'+conf.SV_HOST+':'+str(conf.SV_PORT)+'/'+data['fto_usro']},200)
+                    return self.Utils.nice_json({"fto_usro":lc_prtcl.scheme+'://'+conf.SV_HOST+':'+str(conf.SV_PORT)+'/static/img/'+data['fto_usro']},200)
                 else:
                     return self.Utils.nice_json({"fto_usro":"null"},200)
             else:
-                return self.Utils.nice_json({"error":errors.ERR_NO_TNE_PRFL,lc_prtcl.scheme+'://'+"fto_usro":conf.SV_HOST+':'+str(conf.SV_PORT)+'/'+data['fto_usro']},200)
+                return self.Utils.nice_json({"error":errors.ERR_NO_TNE_PRFL,lc_prtcl.scheme+'://'+"fto_usro":conf.SV_HOST+':'+str(conf.SV_PORT)+'/static/img/'+data['fto_usro']},200)
         else:
             return self.Utils.nice_json({"error":errors.ERR_NO_TNE_PRMTDO_ACCDR},400)
         
