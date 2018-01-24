@@ -11,18 +11,18 @@ import SSI7X.Static.errors as errors  # @UnresolvedImport
 import SSI7X.Static.labels as labels  # @UnresolvedImport
 import SSI7X.Static.config as conf  # @UnresolvedImport
 import SSI7X.Static.config_DB as dbConf # @UnresolvedImport
-from user_agents import parse
+from user_agents import parse 
 import jwt #@UnresolvedImport
 from _codecs import decode
 
 class UsuarioAcceso(Form):
-    username = StringField(labels.lbl_nmbr_usrs,[validators.DataRequired(message=errors.ERR_NO_02)])
-    password = StringField(labels.lbl_cntrsna_usrs,[validators.DataRequired(message=errors.ERR_NO_03)])
+    username = StringField(labels.lbl_nmbr_usrs,[validators.DataRequired(message=errors.ERR_NO_INGSA_USRO)])
+    password = StringField(labels.lbl_cntrsna_usrs,[validators.DataRequired(message=errors.ERR_NO_INGRSA_CNTRSNA)])
     
 class UsroCmbioCntrsna(Form):
-    cntrsna = StringField(labels.lbl_cntrsna_usrs,[validators.DataRequired(message=errors.ERR_NO_03)])
-    cntrsna_nva = StringField(labels.lbl_nva_cntrsna,[validators.DataRequired(message=errors.ERR_NO_04),validators.Length(min=conf.PW_MN_SIZE,message=errors.ERR_NO_06),validators.Regexp('(?=.*\d)',message=errors.ERR_NO_08),validators.Regexp('(?=.*[A-Z])',message=errors.ERR_NO_07)])
-    tkn = StringField('el token', [validators.DataRequired(message='Falta el token'),validators.Length(min=conf.SS_TKN_SIZE,message=errors.ERR_NO_05)])
+    cntrsna = StringField(labels.lbl_cntrsna_usrs,[validators.DataRequired(message=errors.ERR_NO_INGRSA_CNTRSNA)])
+    cntrsna_nva = StringField(labels.lbl_nva_cntrsna,[validators.DataRequired(message=errors.ERR_NO_DB_INGRSR_NVA_CNTRSNA),validators.Length(min=conf.PW_MN_SIZE,message=errors.ERR_NO_MNM_CRCTRS),validators.Regexp('(?=.*\d)',message=errors.ERR_NO_MNMO_NMRO),validators.Regexp('(?=.*[A-Z])',message=errors.ERR_NO_MNMO_MYSCLA)])
+    tkn = StringField('el token', [validators.DataRequired(message='Falta el token'),validators.Length(min=conf.SS_TKN_SIZE,message=errors.ERR_NO_TKN_INVLDO)])
     
 class AutenticacionUsuarios(Resource):
     C = ConnectDB()
@@ -122,9 +122,9 @@ class AutenticacionUsuarios(Resource):
             if data['estdo']:
                 return data
             else:
-                return errors.ERR_NO_11
+                return errors.ERR_NO_USRO_INCTVO
         else:
-            return errors.ERR_NO_10
+            return errors.ERR_NO_TNE_PRFL
         
     def DetectarDispositivo(self):
             str_agente = request.headers.get('User-Agent')
@@ -168,7 +168,7 @@ class  MenuDefectoUsuario(Resource):
                 else:
                     return AutenticaUsuarios.Utils.nice_json({"error":errors.ERR_NO_USRO_SN_MNU},400)
             else:
-                return AutenticaUsuarios.Utils.nice_json({"error":errors.ERR_NO_12},400)
+                return AutenticaUsuarios.Utils.nice_json({"error":errors.ERR_NO_SN_SSN},400)
             
         else:
             return AutenticaUsuarios.Utils.nice_json({"error":errors.ERR_NO_SN_PRMTRS},400)
@@ -205,9 +205,9 @@ class BusquedaImagenUsuario(Resource):
                     return self.Utils.nice_json({"fto_usro":"null"},200)
             else:
                 #return self.Utils.nice_json({"error":errors.ERR_NO_11,"fto_usro":data['fto_usro']},200)
-                return self.Utils.nice_json({"error":errors.ERR_NO_11,lc_prtcl.scheme+'://'+"fto_usro":conf.SV_HOST+':'+str(conf.SV_PORT)+'/'+data['fto_usro']},200)
+                return self.Utils.nice_json({"error":errors.ERR_NO_TNE_PRFL,lc_prtcl.scheme+'://'+"fto_usro":conf.SV_HOST+':'+str(conf.SV_PORT)+'/'+data['fto_usro']},200)
         else:
-            return self.Utils.nice_json({"error":errors.ERR_NO_10},400)
+            return self.Utils.nice_json({"error":errors.ERR_NO_TNE_PRMTDO_ACCDR},400)
         
 class ValidaToken(Resource):
     Utils = Utils()
