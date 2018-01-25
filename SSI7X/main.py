@@ -5,6 +5,7 @@ import SSI7X.Static.config as conf  # @UnresolvedImport
 from SSI7X.AuthUsers import CmboCntrsna,AutenticacionUsuarios,MenuDefectoUsuario,BusquedaImagenUsuario
 from SSI7X.perfiles import CrearPerfil
 from SSI7X.Users import Usuarios
+from SSI7X.preguntas import Preguntas
 
 
 
@@ -28,11 +29,12 @@ api.add_resource(MenuDefectoUsuario,'/menu')
 api.add_resource(BusquedaImagenUsuario,'/imagen_usuario')
 api.add_resource(CrearPerfil,'/perfiles')
 api.add_resource(Usuarios,'/listar_usuarios')
+api.add_resource(Preguntas,'/crear_preguntas_respuestas')
 
 if __name__ == '__main__':
     app.register_blueprint(auth)
     app.register_blueprint(images)
     app.config["SESSION_COOKIE_NAME"]="python_session"
     app.config["SESSION_COOKIE_HTTPONLY"]=False
-    app.secret_key = conf.SS_TKN_SCRET_KEY
+    app.secret_key = conf.SS_TKN_SCRET_KEY 
     app.run( conf.SV_HOST,conf.SV_PORT,conf.ST_DEBUG)

@@ -18,3 +18,4 @@ class CrearPerfil(Resource):
     def post(self):
         lob_rspsta = DatosPerfil(request.form)
         print(lob_rspsta)
+     
