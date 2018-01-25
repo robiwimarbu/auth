@@ -147,9 +147,9 @@ class  MenuDefectoUsuario(Resource):
                     return id_lgn_prfl_scrsl
                 
                 Cursor = C.queryFree(" select "\
+                                    " c.dscrpcn as text , "\
                                     " b.id_mnu as id ,"\
-                                    " c.id_mnu as parent ,"\
-                                    " c.dscrpcn , "\
+                                    " c.id_mnu as parentid ,"\
                                     " c.lnk "\
                                     " FROM ssi7x.tblogins_perfiles_menu a INNER JOIN "\
                                     " ssi7x.tbmenu_ge b on a.id_mnu_ge=b.id INNER JOIN "\
