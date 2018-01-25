@@ -59,7 +59,8 @@ class AutenticacionUsuarios(Resource):
             data = json.loads(json.dumps(self.ObtenerDatosUsuario(request.form['username'])[0], indent=2))
             token = jwt.encode(data, conf.SS_TKN_SCRET_KEY, algorithm='HS256').decode('utf-8')
             arrayValues={}
-            device=self.DetectarDispositivo() 
+            device=self.DetectarDispositivo()
+            arrayValues['key']= str(token)
             arrayValues['ip']=str(IpUsuario)
             arrayValues['dspstvo_accso']=str(device)
             arrayValues['id_lgn_ge']=str(data['id_lgn_ge'])
