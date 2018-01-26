@@ -1,3 +1,7 @@
+'''
+Clase para la gestion de usuarios del sistema
+
+'''
 import hashlib,socket,json # @UnresolvedImport
 from IPy import IP
 from flask import make_response # @UnresolvedImpor
@@ -13,45 +17,62 @@ import SSI7X.Static.config as conf  # @UnresolvedImport
 import SSI7X.Static.config_DB as dbConf # @UnresolvedImport
 from user_agents import parse 
 import jwt #@UnresolvedImport
-from _codecs import decode
+from SSI7X.ValidacionSeguridad import ValidacionSeguridad # @UnresolvedImport
+'''
+Declaracion de variables globales
+'''
+lc_cnctn = ConnectDB()
+Utils = Utils()
+validacionSeguridad = ValidacionSeguridad()
 
+'''
+clase para la validacion de datos provenientes del POST en el login
+'''
 class UsuarioAcceso(Form):
     username = StringField(labels.lbl_nmbr_usrs,[validators.DataRequired(message=errors.ERR_NO_INGSA_USRO)])
     password = StringField(labels.lbl_cntrsna_usrs,[validators.DataRequired(message=errors.ERR_NO_INGRSA_CNTRSNA)])
-    
+
+'''
+clase para la validacion de datos del POST en el cambio de contrasenna
+'''
 class UsroCmbioCntrsna(Form):
     cntrsna = StringField(labels.lbl_cntrsna_usrs,[validators.DataRequired(message=errors.ERR_NO_INGRSA_CNTRSNA)])
     cntrsna_nva = StringField(labels.lbl_nva_cntrsna,[validators.DataRequired(message=errors.ERR_NO_DB_INGRSR_NVA_CNTRSNA),validators.Length(min=conf.PW_MN_SIZE,message=errors.ERR_NO_MNM_CRCTRS),validators.Regexp('(?=.*\d)',message=errors.ERR_NO_MNMO_NMRO),validators.Regexp('(?=.*[A-Z])',message=errors.ERR_NO_MNMO_MYSCLA)])
     tkn = StringField('el token', [validators.DataRequired(message='Falta el token'),validators.Length(min=conf.SS_TKN_SIZE,message=errors.ERR_NO_TKN_INVLDO)])
     
+'''
+
+'''
 class AutenticacionUsuarios(Resource):
-    C = ConnectDB()
-    Utils = Utils()
+    '''
+    Metodo que Asegura la entrada del usuario genera el token de acceso y lo retorna
+    lo insertq en la tabla de gestion de accesos.
+    '''
     def post(self):
         ingreso=False
         u = UsuarioAcceso(request.form)
         if not u.validate():
-            return self.Utils.nice_json({"error":u.errors},400)
+            return Utils.nice_json({"error":u.errors},400)
         IpUsuario = IP(socket.gethostbyname(socket.gethostname()))
         if IpUsuario.iptype() == 'PUBLIC':
             md5= hashlib.md5(request.form['password'].encode('utf-8')).hexdigest() 
-            Cursor = self.C.querySelect(dbConf.DB_SHMA +'.tblogins', 'lgn,cntrsna', "lgn='"+ request.form['username']+ "' and  cntrsna='"+md5+"'")
+            Cursor = lc_cnctn.querySelect(dbConf.DB_SHMA +'.tblogins', 'lgn,cntrsna', "lgn='"+ request.form['username']+ "' and  cntrsna='"+md5+"'")
             if Cursor :
-                if type(self.validaUsuario(request.form['username'])) is dict:
+                if type(validacionSeguridad.validaUsuario(request.form['username'])) is dict:
                     ingreso=True                  
                 else:
-                    return self.validaUsuario(request.form['username'])
+                    return validacionSeguridad.validaUsuario(request.form['username'])
             else:
                 ingreso               
         elif IpUsuario.iptype() == 'PRIVATE':
             Cldap = Conexion_ldap()
             VerificaConexion = Cldap.Conexion_ldap(request.form['username'], request.form['password'])
             if VerificaConexion :
-                if type(self.validaUsuario(request.form['username'])) is dict:
+                if type(validacionSeguridad.validaUsuario(request.form['username'])) is dict:
                     ingreso=True                  
                 else:
-                    error = str(self.validaUsuario(request.form['username']))
-                    return self.Utils.nice_json({"error":error},400)    
+                    error = str(validacionSeguridad.validaUsuario(request.form['username']))
+                    return Utils.nice_json({"error":error},400)    
             else:
                 ingreso                 
                 
@@ -59,7 +80,7 @@ class AutenticacionUsuarios(Resource):
             data = json.loads(json.dumps(self.ObtenerDatosUsuario(request.form['username'])[0], indent=2))
             token = jwt.encode(data, conf.SS_TKN_SCRET_KEY, algorithm='HS256').decode('utf-8')
             arrayValues={}
-            device=self.DetectarDispositivo()
+            device=Utils.DetectarDispositivo(request.headers.get('User-Agent'))
             arrayValues['key']= str(token)
             arrayValues['ip']=str(IpUsuario)
             arrayValues['dspstvo_accso']=str(device)
@@ -72,10 +93,13 @@ class AutenticacionUsuarios(Resource):
             response.headers["Set-cookie"]=str(token)
             return response
         else:
-            return self.Utils.nice_json({"error":errors.ERR_NO_USRO_CNTSN_INVLD},400)
-                
+            return Utils.nice_json({"error":errors.ERR_NO_USRO_CNTSN_INVLD},400)
+    '''
+    Este metodo retorna la informacion del usuario en objeto.
+    recibe como parametro el nombre de usuario.
+    '''            
     def ObtenerDatosUsuario(self,usuario):
-        cursor = self.C.queryFree(" select " \
+        cursor = lc_cnctn.queryFree(" select " \
                              " case when emplds_une.id is not null then "\
                              " concat_ws("\
                              " ' ',"\
@@ -100,54 +124,24 @@ class AutenticacionUsuarios(Resource):
                              " left join ssi7x.tbprestadores prstdr on prstdr.id_lgn_accso_ge = lgn_ge.id " \
                              " where lgn.lgn = '"+usuario+"'")
         return cursor
-    
-            
-    def validaUsuario(self, usuario):
-        IdUsuarioGe = json.loads(json.dumps(self.ObtenerDatosUsuario(usuario)[0], indent=2))
-        strQuery = "SELECT "\
-                    " a.id as id_prfl_scrsl,"\
-                    " b.nmbre_scrsl as nmbre_scrsl,"\
-                    " c.estdo as estdo "\
-                    " FROM ssi7x.tblogins_perfiles_sucursales a"\
-                    " left JOIN  ssi7x.tbsucursales b on a.id_scrsl=b.id"\
-                    " left join ssi7x.tblogins_ge c on c.id = a.id_lgn_ge"\
-                    " WHERE  a.id_lgn_ge = "+str(IdUsuarioGe['id_lgn_ge'])+" and a.mrca_scrsl_dfcto is true"
-        Cursor = self.C.queryFree(strQuery)
-        
-        if Cursor :
-            data = json.loads(json.dumps(Cursor[0], indent=2))
-            if data['estdo']:
-                return data
-            else:
-                return errors.ERR_NO_USRO_INCTVO
-        else:
-            return errors.ERR_NO_TNE_PRFL
-        
-    def DetectarDispositivo(self):
-            str_agente = request.headers.get('User-Agent')
-            dispositivo_usuario = parse(str_agente)
-            return dispositivo_usuario
         
     def InsertGestionAcceso(self,objectValues):
-        self.C.queryInsert(dbConf.DB_SHMA+".tbgestion_accesos", objectValues)        
+        lc_cnctn.queryInsert(dbConf.DB_SHMA+".tbgestion_accesos", objectValues)        
 
 
 class  MenuDefectoUsuario(Resource):
     def post(self): 
-        valida_token = ValidaToken()
-        AutenticaUsuarios = AutenticacionUsuarios()
         token = request.headers['Authorization']
         if token:
-            valida_token = valida_token.ValidacionToken(token) 
-            C = ConnectDB()
-            if valida_token :
+            validacionSeguridad.ValidacionToken(token) 
+            if validacionSeguridad :
                 DatosUsuario = jwt.decode(token, conf.SS_TKN_SCRET_KEY, 'utf-8')
-                id_lgn_prfl_scrsl = AutenticaUsuarios.validaUsuario(DatosUsuario['lgn'])
+                id_lgn_prfl_scrsl = validacionSeguridad.validaUsuario(DatosUsuario['lgn'])
                 
                 if type(id_lgn_prfl_scrsl) is not dict:
                     return id_lgn_prfl_scrsl
                 
-                Cursor = C.queryFree(" select "\
+                Cursor = lc_cnctn.queryFree(" select "\
                                     " c.dscrpcn as text , "\
                                     " b.id_mnu as id ,"\
                                     " c.id_mnu as parentid ,"\
@@ -161,30 +155,27 @@ class  MenuDefectoUsuario(Resource):
                                     " cast(c.ordn as integer)")
                 if Cursor :    
                     data = json.loads(json.dumps(Cursor, indent=2))
-                    return AutenticaUsuarios.Utils.nice_json(data,200)
+                    return Utils.nice_json(data,200)
                 else:
-                    return AutenticaUsuarios.Utils.nice_json({"error":errors.ERR_NO_USRO_SN_MNU},400)
+                    return Utils.nice_json({"error":errors.ERR_NO_USRO_SN_MNU},400)
             else:
-                return AutenticaUsuarios.Utils.nice_json({"error":errors.ERR_NO_SN_SSN},400)
+                return Utils.nice_json({"error":errors.ERR_NO_SN_SSN},400)
             
         else:
-            return AutenticaUsuarios.Utils.nice_json({"error":errors.ERR_NO_SN_PRMTRS},400)
+            return Utils.nice_json({"error":errors.ERR_NO_SN_PRMTRS},400)
         
         
 class CmboCntrsna(Resource):
     def post(self):
         u = UsroCmbioCntrsna(request.form)
         if not u.validate():
-            return self.Utils.nice_json({"status":"Error","error":u.errors,"user":"null"})
+            return Utils.nice_json({"status":"Error","error":u.errors,"user":"null"})
         
 class BusquedaImagenUsuario(Resource):
-    C = ConnectDB()
-    Utils = Utils()
-   
     def post(self):
         lc_url = request.url
         lc_prtcl = urlparse(lc_url)    
-        Cursor = self.C.queryFree(" select "\
+        Cursor = lc_cnctn.queryFree(" select "\
                                  " id ,"\
                                  " lgn ,"\
                                  " fto_usro,"\
@@ -195,20 +186,10 @@ class BusquedaImagenUsuario(Resource):
             data = json.loads(json.dumps(Cursor[0], indent=2))
             if data['estdo']:
                 if data['fto_usro']:
-                    return self.Utils.nice_json({"fto_usro":lc_prtcl.scheme+'://'+conf.SV_HOST+':'+str(conf.SV_PORT)+'/static/img/'+data['fto_usro']},200)
+                    return Utils.nice_json({"fto_usro":lc_prtcl.scheme+'://'+conf.SV_HOST+':'+str(conf.SV_PORT)+'/static/img/'+data['fto_usro']},200)
                 else:
-                    return self.Utils.nice_json({"fto_usro":"null"},200)
+                    return Utils.nice_json({"fto_usro":"null"},200)
             else:
-                return self.Utils.nice_json({"error":errors.ERR_NO_TNE_PRFL,lc_prtcl.scheme+'://'+"fto_usro":conf.SV_HOST+':'+str(conf.SV_PORT)+'/static/img/'+data['fto_usro']},200)
+                return Utils.nice_json({"error":errors.ERR_NO_TNE_PRFL,lc_prtcl.scheme+'://'+"fto_usro":conf.SV_HOST+':'+str(conf.SV_PORT)+'/static/img/'+data['fto_usro']},200)
         else:
-            return self.Utils.nice_json({"error":errors.ERR_NO_TNE_PRMTDO_ACCDR},400)
-        
-class ValidaToken(Resource):
-    Utils = Utils()
-    def ValidacionToken(self,token):
-        try:
-            decode = jwt.decode(token, conf.SS_TKN_SCRET_KEY, 'utf-8')
-            return True
-        except jwt.exceptions.ExpiredSignatureError:
-            return  False     
-        
+            return Utils.nice_json({"error":errors.ERR_NO_TNE_PRMTDO_ACCDR},400)
