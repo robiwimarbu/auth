@@ -14,11 +14,10 @@ class DatosPerfil(Form):
     cdgo = StringField(labels.lbl_cdgo_prfl,[validators.DataRequired(message=errors.ERR_NO_Cdgo)])
     dscrpcn = StringField(labels.lbl_dscrpcn_prfl,[validators.DataRequired(message=errors.ERR_NO_Dscrpcn)])
     
-class Perfil(Resource):
+class CrearPerfil(Resource):
     Utils = Utils()
     lc_cnctn = ConnectDB()
     def post(self):
-        ManejoDatos = False 
         lob_rspsta = DatosPerfil(request.form)
         if not lob_rspsta.validate(): 
             return self.Utils.nice_json({"error":lob_rspsta.errors},400)
@@ -28,6 +27,10 @@ class Perfil(Resource):
         validacionSeguridad = ValidacionSeguridad()
         
         if validacionSeguridad.Principal(token, ln_opcn_mnu):
-            ManejoDatos            
+            arrayValues={}
+            #arrayValues['id_lgn_ge']=str(data['id_lgn_ge'])
+            #arrayValues['id_lgn_ge']=str(data['id_lgn_ge'])
+            self.InsertGestionAcceso(arrayValues)
+                        
         else:
             return self.Utils.nice_json({"error":"null"},400)
