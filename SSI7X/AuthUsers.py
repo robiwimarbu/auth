@@ -77,7 +77,7 @@ class AutenticacionUsuarios(Resource):
                 ingreso                 
                 
         if  ingreso:
-            data = json.loads(json.dumps(self.ObtenerDatosUsuario(request.form['username'])[0], indent=2))
+            data = json.loads(json.dumps(validacionSeguridad.ObtenerDatosUsuario(request.form['username'])[0], indent=2))
             token = jwt.encode(data, conf.SS_TKN_SCRET_KEY, algorithm='HS256').decode('utf-8')
             arrayValues={}
             device=Utils.DetectarDispositivo(request.headers.get('User-Agent'))
@@ -98,32 +98,7 @@ class AutenticacionUsuarios(Resource):
     Este metodo retorna la informacion del usuario en objeto.
     recibe como parametro el nombre de usuario.
     '''            
-    def ObtenerDatosUsuario(self,usuario):
-        cursor = lc_cnctn.queryFree(" select " \
-                             " case when emplds_une.id is not null then "\
-                             " concat_ws("\
-                             " ' ',"\
-                             " emplds.prmr_nmbre,"\
-                             " emplds.sgndo_nmbre,"\
-                             " emplds.prmr_aplldo,"\
-                             " emplds.sgndo_aplldo)"\
-                             " else" \
-                             " prstdr.nmbre_rzn_scl" \
-                             " end as nmbre_cmplto," \
-                             " case when emplds_une.id is not null then" \
-                             " emplds.crro_elctrnco" \
-                             " else" \
-                             " prstdr.crro_elctrnco" \
-                             " end as crro_elctrnco," \
-                             " lgn_ge.id as id_lgn_ge, " \
-                             " lgn.lgn as lgn " \
-                             " from ssi7x.tblogins_ge lgn_ge " \
-                             " left join ssi7x.tblogins lgn on lgn.id = lgn_ge.id_lgn " \
-                             " left join ssi7x.tbempleados_une emplds_une on emplds_une.id_lgn_accso_ge = lgn_ge.id " \
-                             " left join ssi7x.tbempleados emplds on emplds.id = emplds_une.id_empldo " \
-                             " left join ssi7x.tbprestadores prstdr on prstdr.id_lgn_accso_ge = lgn_ge.id " \
-                             " where lgn.lgn = '"+usuario+"'")
-        return cursor
+    
         
     def InsertGestionAcceso(self,objectValues):
         lc_cnctn.queryInsert(dbConf.DB_SHMA+".tbgestion_accesos", objectValues)        
@@ -137,7 +112,7 @@ class  MenuDefectoUsuario(Resource):
             if validacionSeguridad :
                 DatosUsuario = jwt.decode(token, conf.SS_TKN_SCRET_KEY, 'utf-8')
                 id_lgn_prfl_scrsl = validacionSeguridad.validaUsuario(DatosUsuario['lgn'])
-                
+                print(DatosUsuario)
                 if type(id_lgn_prfl_scrsl) is not dict:
                     return id_lgn_prfl_scrsl
                 
