@@ -5,7 +5,7 @@ Clase para la gestion de usuarios del sistema
 import hashlib,socket,json # @UnresolvedImport
 from IPy import IP
 from flask import make_response # @UnresolvedImpor
-from flask_restful import request, Resource
+from flask_restful import request, Resource, reqparse
 from wtforms import Form, validators, StringField
 from SSI7X.Static.ConnectDB import ConnectDB  # @UnresolvedImport
 from SSI7X.Static.Utils import Utils  # @UnresolvedImport
@@ -18,6 +18,8 @@ import SSI7X.Static.config_DB as dbConf # @UnresolvedImport
 from user_agents import parse 
 import jwt #@UnresolvedImport
 from SSI7X.ValidacionSeguridad import ValidacionSeguridad # @UnresolvedImport
+
+
 '''
 Declaracion de variables globales
 '''
@@ -41,14 +43,21 @@ class UsroCmbioCntrsna(Form):
     tkn = StringField('el token', [validators.DataRequired(message='Falta el token'),validators.Length(min=conf.SS_TKN_SIZE,message=errors.ERR_NO_TKN_INVLDO)])
     
 '''
-
+Objeto de autenticacion recibe la solicitud  del metodo a ejecutar
+llamado en el argument page
 '''
 class AutenticacionUsuarios(Resource):
-    '''
-    Metodo que Asegura la entrada del usuario genera el token de acceso y lo retorna
-    lo insertq en la tabla de gestion de accesos.
-    '''
-    def post(self):
+    def post(self, **kwargs):
+        if kwargs['page'] == 'login':
+            self.login()
+        elif kwargs['page'] == 'menu':
+            return self.MenuDefectoUsuario()
+        elif kwargs['page'] == 'cambio_password':
+            return self.CmboCntrsna()
+        elif kwargs['page'] == 'imagen_usuario':
+            return self.BusquedaImagenUsuario()
+            
+    def login(self):    
         ingreso=False
         u = UsuarioAcceso(request.form)
         if not u.validate():
@@ -94,18 +103,8 @@ class AutenticacionUsuarios(Resource):
             return response
         else:
             return Utils.nice_json({"error":errors.ERR_NO_USRO_CNTSN_INVLD},400)
-    '''
-    Este metodo retorna la informacion del usuario en objeto.
-    recibe como parametro el nombre de usuario.
-    '''            
-    
         
-    def InsertGestionAcceso(self,objectValues):
-        lc_cnctn.queryInsert(dbConf.DB_SHMA+".tbgestion_accesos", objectValues)        
-
-
-class  MenuDefectoUsuario(Resource):
-    def post(self): 
+    def MenuDefectoUsuario(self):
         token = request.headers['Authorization']
         if token:
             validacionSeguridad.ValidacionToken(token) 
@@ -139,15 +138,12 @@ class  MenuDefectoUsuario(Resource):
         else:
             return Utils.nice_json({"error":errors.ERR_NO_SN_PRMTRS},400)
         
-        
-class CmboCntrsna(Resource):
-    def post(self):
+    def CmboCntrsna(self):
         u = UsroCmbioCntrsna(request.form)
         if not u.validate():
-            return Utils.nice_json({"status":"Error","error":u.errors,"user":"null"})
-        
-class BusquedaImagenUsuario(Resource):
-    def post(self):
+            return Utils.nice_json({"status":"Error","error":u.errors,"user":"null"},200)
+    
+    def BusquedaImagenUsuario(self):
         lc_url = request.url
         lc_prtcl = urlparse(lc_url)    
         Cursor = lc_cnctn.queryFree(" select "\
@@ -168,3 +164,9 @@ class BusquedaImagenUsuario(Resource):
                 return Utils.nice_json({"error":errors.ERR_NO_TNE_PRFL,lc_prtcl.scheme+'://'+"fto_usro":conf.SV_HOST+':'+str(conf.SV_PORT)+'/static/img/'+data['fto_usro']},200)
         else:
             return Utils.nice_json({"error":errors.ERR_NO_TNE_PRMTDO_ACCDR},400)
+
+        
+    def InsertGestionAcceso(self,objectValues):
+        lc_cnctn.queryInsert(dbConf.DB_SHMA+".tbgestion_accesos", objectValues)        
+        
+                
