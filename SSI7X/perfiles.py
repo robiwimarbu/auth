@@ -17,7 +17,15 @@ class DatosPerfil(Form):
 class CrearPerfil(Resource):
     Utils = Utils()
     lc_cnctn = ConnectDB()
-    def post(self):
+    
+    def post(self,**kwargs):
+        
+        if kwargs['page']=='crear':
+            return self.crear()
+        
+    
+    def crear(self):
+                        
         lob_rspsta = DatosPerfil(request.form)
         if not lob_rspsta.validate(): 
             return self.Utils.nice_json({"error":lob_rspsta.errors},400)
@@ -34,11 +42,11 @@ class CrearPerfil(Resource):
             ld_id_prfl =  self.lc_cnctn.queryInsert(dbConf.DB_SHMA+".tbperfiles", arrayValues,'id')
             if ld_id_prfl:
                 arrayValuesDetalle={}
-                arrayValuesDetalle=['id_prfl']= ld_id_prfl
-                arrayValuesDetalle=['id_undd_ngco']= 
-                arrayValuesDetalle=['id_lgn_crcn_ge']= 
-                arrayValuesDetalle=['id_lgn_mdfccn_ge']= 
-                arrayValuesDetalle=['fcha_mdfccn']= 
+                arrayValuesDetalle['id_prfl']= ld_id_prfl
+                arrayValuesDetalle['id_undd_ngco']= str('3')
+                arrayValuesDetalle['id_lgn_crcn_ge']= str('3')
+                arrayValuesDetalle['id_lgn_mdfccn_ge']= str('3')
+                arrayValuesDetalle['fcha_mdfccn']= str('3')
                 self.lc_cnctn.queryInsert(dbConf.DB_SHMA+".tbperfiles_une", arrayValuesDetalle)
                 print(arrayValuesDetalle)
             else:    
