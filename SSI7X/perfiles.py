@@ -42,14 +42,14 @@ class CrearPerfil(Resource):
             ld_id_prfl =  self.lc_cnctn.queryInsert(dbConf.DB_SHMA+".tbperfiles", arrayValues,'id')
             if ld_id_prfl:
                 arrayValuesDetalle={}
-                arrayValuesDetalle['id_prfl']= ld_id_prfl
-                arrayValuesDetalle['id_undd_ngco']= str('3')
-                arrayValuesDetalle['id_lgn_crcn_ge']= str('3')
+                arrayValuesDetalle['id_prfl'] = ld_id_prfl
+                arrayValuesDetalle['id_undd_ngco'] = str('3')
+                arrayValuesDetalle['id_lgn_crcn_ge'] = str('3')
                 arrayValuesDetalle['id_lgn_mdfccn_ge']= str('3')
                 arrayValuesDetalle['fcha_mdfccn']= str('3')
                 self.lc_cnctn.queryInsert(dbConf.DB_SHMA+".tbperfiles_une", arrayValuesDetalle)
                 print(arrayValuesDetalle)
             else:    
-               print('error')        
+                print('error')        
         else:
             return self.Utils.nice_json({"error":"null"},400)
