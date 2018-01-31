@@ -28,9 +28,20 @@ class CrearPerfil(Resource):
         
         if validacionSeguridad.Principal(token, ln_opcn_mnu):
             arrayValues={}
-            #arrayValues['id_lgn_ge']=str(data['id_lgn_ge'])
-            #arrayValues['id_lgn_ge']=str(data['id_lgn_ge'])
-            self.InsertGestionAcceso(arrayValues)
-                        
+            arrayValues['cdgo'] = request.form["cdgo"]
+            arrayValues['dscrpcn'] = request.form["dscrpcn"]
+            print(arrayValues)
+            ld_id_prfl =  self.lc_cnctn.queryInsert(dbConf.DB_SHMA+".tbperfiles", arrayValues,'id')
+            if ld_id_prfl:
+                arrayValuesDetalle={}
+                arrayValuesDetalle=['id_prfl']= ld_id_prfl
+                arrayValuesDetalle=['id_undd_ngco']= 
+                arrayValuesDetalle=['id_lgn_crcn_ge']= 
+                arrayValuesDetalle=['id_lgn_mdfccn_ge']= 
+                arrayValuesDetalle=['fcha_mdfccn']= 
+                self.lc_cnctn.queryInsert(dbConf.DB_SHMA+".tbperfiles_une", arrayValuesDetalle)
+                print(arrayValuesDetalle)
+            else:    
+               print('error')        
         else:
             return self.Utils.nice_json({"error":"null"},400)
