@@ -36,6 +36,8 @@ class Usuarios(Resource):
             return self.ObtenerUsuarios(arrayParametros)
         elif kwargs['page'] == 'insertar_usuario':
             return self.InsertarUsuarios()
+        elif kwargs['page'] == 'actualizar_usuario':
+            return self.ActualzarUsuario()
     
     def ObtenerUsuarios(self,parametros):
         prmtrs=''
@@ -62,7 +64,7 @@ class Usuarios(Resource):
             return Utils.nice_json(data,200)
         else:
             return Utils.nice_json({"error":errors.ERR_NO_RGSTRS},400)
-        
+    
     def InsertarUsuarios(self):
         token = request.headers['Authorization']
         fcha_actl = time.ctime()
@@ -71,7 +73,6 @@ class Usuarios(Resource):
         val = validacionSeguridad.Principal(token,ln_opcn_mnu)
         
         if val :
-            print('opcion menu '+ln_opcn_mnu)
             DatosUsuario = jwt.decode(token, conf.SS_TKN_SCRET_KEY, 'utf-8')
             id_lgn_ge_ssn = validacionSeguridad.validaUsuario(DatosUsuario['lgn'])
             '''
@@ -83,24 +84,60 @@ class Usuarios(Resource):
             arrayValues['cntrsna']=request.form['password'] #pendiente encriptar la contraseña
             arrayValues['nmbre_usro']=request.form['nombre_usuario']
             arrayValues['fto_usro']=request.form['login'] #pendiente traer imagen
-            id_lgn = self.CrearUsuario(arrayValues)
+            id_lgn = self.UsuarioInsertaRegistro(arrayValues,'tblogins')
             arrayValues3['id_lgn']=str(id_lgn)
             arrayValues3['fcha_crcn']=str(fcha_actl)
             arrayValues3['fcha_mdfccn']=str(fcha_actl)
             arrayValues3['id_grpo_emprsrl']='2' #pendiente traer esta variable de una cookie
-            id_lgn_ge=self.CrearUsuarioGe(arrayValues3)
-            print('login',id_lgn_ge)
+            id_lgn_ge=self.UsuarioInsertaRegistro(arrayValues3,'tblogins_ge')
+            print(id_lgn_ge)
+            return Utils.nice_json({"error":errors.SCCSS_RGSTRO_EXTSO},200)
+        
             '''
-            Fin de la insercion de los datos
+                Fin de la insercion de los datos
             '''
         else:
             return Utils.nice_json({"error":errors.ERR_NO_ATRZCN},400)
+    
+    def ActualzarUsuario(self):
+        token = request.headers['Authorization']
+        fcha_actl = time.ctime()
+        ln_opcn_mnu = request.form["id_mnu"]
+        validacionSeguridad = ValidacionSeguridad()
+        val = validacionSeguridad.Principal(token,ln_opcn_mnu)
         
+        if val :
+            DatosUsuario = jwt.decode(token, conf.SS_TKN_SCRET_KEY, 'utf-8')
+            id_lgn_ge_ssn = validacionSeguridad.validaUsuario(DatosUsuario['lgn'])
+            '''
+                Aqui insertamos los datos del usuario
+            '''
+            arrayValues={}
+            arrayValues2={}
+            arrayValues['id']=request.form['id_login_ge']
+            arrayValues['lgn']=request.form['login']
+            arrayValues['cntrsna']=request.form['password'] #pendiente encriptar la contraseña
+            arrayValues['nmbre_usro']=request.form['nombre_usuario']
+            arrayValues['fto_usro']=request.form['login'] #pendiente traer imagen
+            self.UsuarioActualizaRegistro(arrayValues,'tblogins')
+            print(request.form['id_login_ge'])
+            #arrayValues2['id_lgn']=str(id_lgn)
+            arrayValues2['fcha_crcn']=str(fcha_actl)
+            arrayValues2['fcha_mdfccn']=str(fcha_actl)
+            arrayValues2['id_grpo_emprsrl']='2' #pendiente traer esta variable de una cookie
+            #id_lgn_ge=self.UsuarioActualizaRegistro(arrayValues2,'tblogins_ge')
+            print('ingreso a aqui, a la actualizacion')
+            return Utils.nice_json({"error":errors.SCCSS_RGSTRO_EXTSO},200) 
+            
+            
+            '''
+                Fin de la insercion de los datos
+            '''
+        else:
+            return Utils.nice_json({"error":errors.ERR_NO_ATRZCN},400)
+     
+    def UsuarioInsertaRegistro(self,objectValues,table_name):
+        return lc_cnctn.queryInsert(dbConf.DB_SHMA+"."+str(table_name), objectValues,'id') 
     
-    def CrearUsuario(self,objectValues):
-        return lc_cnctn.queryInsert(dbConf.DB_SHMA+".tblogins", objectValues,'id')
-    
-    def CrearUsuarioGe(self,objectValues):
-        return lc_cnctn.queryInsert(dbConf.DB_SHMA+".tblogins_ge", objectValues,'id')
-    
-        
+    def UsuarioActualizaRegistro(self,objectValues,table_name):
+        return lc_cnctn.queryUpdate(dbConf.DB_SHMA+"."+str(table_name), objectValues,'id=657')
