@@ -26,7 +26,6 @@ api.add_resource(Perfiles,'/perfiles/<page>')
 api.add_resource(Usuarios,'/listar_usuarios')
 
 
-
 if __name__ == '__main__':
     app.register_blueprint(auth)
     app.register_blueprint(images)
