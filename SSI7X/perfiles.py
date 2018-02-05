@@ -1,9 +1,10 @@
+import json # @UnresolvedImport
 from SSI7X.Static.ConnectDB import ConnectDB  # @UnresolvedImport
 from SSI7X.Static.Utils import Utils  # @UnresolvedImport
 from flask_restful import request, Resource
-from wtforms import Form, validators, StringField
-import SSI7X.Static.labels as labels # @UnresolvedImport
+from wtforms import Form, validators, StringField , IntegerField, BooleanField
 from SSI7X.ValidacionSeguridad import ValidacionSeguridad  # @UnresolvedImport
+import SSI7X.Static.labels as labels # @UnresolvedImport
 import SSI7X.Static.errors as errors  # @UnresolvedImport
 import SSI7X.Static.config_DB as dbConf # @UnresolvedImport
 import jwt
@@ -12,18 +13,27 @@ import time
 
 ##clase de llamado para validar datos desde labels
 class DatosPerfil(Form):
-    cdgo = StringField(labels.lbl_cdgo_prfl,[validators.DataRequired(message=errors.ERR_NO_Cdgo)])
+    cdgo    = StringField(labels.lbl_cdgo_prfl,[validators.DataRequired(message=errors.ERR_NO_Cdgo)])
     dscrpcn = StringField(labels.lbl_dscrpcn_prfl,[validators.DataRequired(message=errors.ERR_NO_Dscrpcn)])
-    
+
+class DatosUpdate(Form):
+    cdgo    = StringField(labels.lbl_cdgo_prfl,[validators.DataRequired(message=errors.ERR_NO_Cdgo)])
+    dscrpcn = StringField(labels.lbl_dscrpcn_prfl,[validators.DataRequired(message=errors.ERR_NO_Dscrpcn)])
+    id_prfl_une = IntegerField(labels.lbl_id_prfl,[validators.DataRequired(message=errors.ERR_NO_ID)])    
+        
 class Perfiles(Resource):
     Utils = Utils()
     lc_cnctn = ConnectDB()
+    fecha_act = time.ctime()
     
     def post(self,**kwargs):
         
         if kwargs['page']=='crear':
             return self.crear()
-        
+        if kwargs['page']=='ListarPerfiles':
+            return self.ListarPerfiles()
+        if kwargs['page']=='ActualizarPerfil':
+            return self.ListarPerfiles()
     
     def crear(self):
                         
@@ -33,19 +43,14 @@ class Perfiles(Resource):
         
         ln_opcn_mnu = request.form["id_mnu"]
         token = request.headers['Authorization']
-        fecha_act = time.ctime()
         validacionSeguridad = ValidacionSeguridad()
         
         if validacionSeguridad.Principal(token, ln_opcn_mnu):
             DatosUsuarioToken = jwt.decode(token, conf.SS_TKN_SCRET_KEY, 'utf-8')
-            print(DatosUsuarioToken['lgn'])
             datosUsuario = validacionSeguridad.ObtenerDatosUsuario(DatosUsuarioToken['lgn'])[0]
-            print(datosUsuario)
             arrayValues={}
             arrayValues['cdgo'] = request.form["cdgo"]
             arrayValues['dscrpcn'] = request.form["dscrpcn"]
-            print(arrayValues)
-            ld_id_prfl = 3
             ld_id_prfl =  self.lc_cnctn.queryInsert(dbConf.DB_SHMA+".tbperfiles", arrayValues,'id')
             if ld_id_prfl:
                 arrayValuesDetalle={}
@@ -53,10 +58,9 @@ class Perfiles(Resource):
                 arrayValuesDetalle['id_undd_ngco'] = str(3)
                 arrayValuesDetalle['id_lgn_crcn_ge'] = str(datosUsuario['id_lgn_ge'])
                 arrayValuesDetalle['id_lgn_mdfccn_ge'] = str(datosUsuario['id_lgn_ge'])  
-                arrayValuesDetalle['fcha_mdfccn'] = str(fecha_act)
-                arrayValuesDetalle['fcha_mdfccn'] = str(fecha_act)
+                arrayValuesDetalle['fcha_mdfccn'] = str(self.fecha_act)
+                arrayValuesDetalle['fcha_mdfccn'] = str(self.fecha_act)
                 self.lc_cnctn.queryInsert(dbConf.DB_SHMA+".tbperfiles_une", arrayValuesDetalle)
-                print(arrayValuesDetalle)
             else:    
                 print('error')        
         else:
@@ -64,4 +68,74 @@ class Perfiles(Resource):
         
     def ListarPerfiles(self):
         
+        ln_opcn_mnu = request.form["id_mnu"]
+        token = request.headers['Authorization']
+        validacionSeguridad = ValidacionSeguridad()
+        
+        if validacionSeguridad.Principal(token, ln_opcn_mnu):
+            lc_dta = ''
+            lc_cdgo     = request.form["cdgo"]
+            lc_dscrpcn  = request.form["dscrpcn"]
+            ln_id_undd_ngco = str(3)
+            if lc_cdgo :
+                lc_dta = lc_dta +" and a.cdgo = '" + lc_cdgo +"' "
+            if lc_dscrpcn:
+                lc_dta = lc_dta + "  and a.dscrpcn like '%" + lc_dscrpcn + "%' "
+                   
+            Cursor = self.lc_cnctn.queryFree(" select b.id, "\
+                                    " a.cdgo,a.dscrpcn "\
+                                    " from "\
+                                    " ssi7x.tbperfiles a inner join  ssi7x.tbperfiles_une b on "\
+                                    " a.id=b.id_prfl "\
+                                    " where "\
+                                    " b.id_undd_ngco = "+str(ln_id_undd_ngco)+" and  a.estdo = true "\
+                                    " and b.estdo = true  "+ lc_dta +""\
+                                    " order by a.dscrpcn")    
+            if Cursor :    
+                data = json.loads(json.dumps(Cursor, indent=2))
+                return self.Utils.nice_json(data,200)
+            else:
+                return self.Utils.nice_json({"error":errors.ERR_NO_USRO_SN_MNU},400)
+        else:
+            return self.Utils.nice_json({"error":"null"},400)
+        
+    def ActualizarPerfil(self):
+        
+        lob_rspsta = DatosUpdate(request.form)
+        if not lob_rspsta.validate(): 
+            return self.Utils.nice_json({"error":lob_rspsta.errors},400)
+        
+        ln_opcn_mnu = request.form["id_mnu"]
+        token = request.headers['Authorization']
+        validacionSeguridad = ValidacionSeguridad()
+        
+        if validacionSeguridad.Principal(token, ln_opcn_mnu):
+            DatosUsuarioToken = jwt.decode(token, conf.SS_TKN_SCRET_KEY, 'utf-8')
+            datosUsuario = validacionSeguridad.ObtenerDatosUsuario(DatosUsuarioToken['lgn'])[0]                      
+            lc_cdgo     = request.form["cdgo"]
+            lc_dscrpcn  = request.form["dscrpcn"]  
+            ln_id_prfl_une = request.form["id_prfl_une"]
+            lb_estdo    = request.form["estdo"]           
+            arrayValues={}
+            arrayValuesDetalle={}
+            #Actualizo tabla une
+            arrayValuesDetalle['id_lgn_mdfccn_ge']  =  ln_id_prfl_une
+            arrayValuesDetalle['estdo']             =  lb_estdo            
+            arrayValuesDetalle['fcha_mdfccn']       =  str(self.fcha_actl)                    
+            self.UsuarioActualizaRegistro(arrayValuesDetalle,'tbperfiles_une')
+            #obtengo id_lgn a partir del id_lgn_ge
+            Cursor = self.lc_cnctn.querySelect(dbConf.DB_SHMA +'.tbperfiles_une', 'id_prfl', "id="+str(ln_id_prfl_une))
+            if Cursor :
+                data        = json.loads(json.dumps(Cursor[0], indent=2))
+                ln_id_prfl  = data['id_prfl']
+            #Actualizo tabla principal
+            arrayValues['id']     = ln_id_prfl
+            arrayValues['cdgo']   = str(lc_cdgo)
+            arrayValues['dscrpcn']= lc_dscrpcn
+            arrayValues['estdo']  = lb_estdo
+            self.UsuarioActualizaRegistro(arrayValues,'tbperfiles')
+        else:
+            return self.Utils.nice_json({"error":"null"},400)
+        
+         
         
