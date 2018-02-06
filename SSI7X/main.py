@@ -27,7 +27,7 @@ api = Api( auth, prefix="/api")
 api.add_resource(AutenticacionUsuarios,'/auth/<page>')
 api.add_resource(CrearPerfil,'/perfiles')
 api.add_resource(Usuarios,'/listar_usuarios')
-api.add_resource(Preguntas,'/crear_preguntas_respuestas')
+api.add_resource(Preguntas,'/preguntasSg/<page>')
 
 
 
