@@ -5,7 +5,7 @@ Clase para la gestion de usuarios del sistema
 import hashlib,socket,json # @UnresolvedImport
 from IPy import IP
 from flask import make_response # @UnresolvedImpor
-from flask_restful import request, Resource, reqparse
+from flask_restful import request, Resource
 from wtforms import Form, validators, StringField
 from SSI7X.Static.ConnectDB import ConnectDB  # @UnresolvedImport
 from SSI7X.Static.Utils import Utils  # @UnresolvedImport
@@ -14,11 +14,9 @@ from urllib.parse import urlparse
 import SSI7X.Static.errors as errors  # @UnresolvedImport
 import SSI7X.Static.labels as labels  # @UnresolvedImport
 import SSI7X.Static.config as conf  # @UnresolvedImport
-import SSI7X.Static.config_DB as dbConf # @UnresolvedImport
-from user_agents import parse 
+import SSI7X.Static.config_DB as dbConf # @UnresolvedImport 
 import jwt #@UnresolvedImport
 from SSI7X.ValidacionSeguridad import ValidacionSeguridad # @UnresolvedImport
-
 
 '''
 Declaracion de variables globales
@@ -49,7 +47,7 @@ llamado en el argument page
 class AutenticacionUsuarios(Resource):
     def post(self, **kwargs):
         if kwargs['page'] == 'login':
-            self.login()
+            return self.login()
         elif kwargs['page'] == 'menu':
             return self.MenuDefectoUsuario()
         elif kwargs['page'] == 'cambio_password':
@@ -59,7 +57,10 @@ class AutenticacionUsuarios(Resource):
             
     def login(self):    
         ingreso=False
+        print(request.form)
+        
         u = UsuarioAcceso(request.form)
+        
         if not u.validate():
             return Utils.nice_json({"error":u.errors},400)
         IpUsuario = IP(socket.gethostbyname(socket.gethostname()))
@@ -86,8 +87,14 @@ class AutenticacionUsuarios(Resource):
                 ingreso                 
                 
         if  ingreso:
-            data = json.loads(json.dumps(validacionSeguridad.ObtenerDatosUsuario(request.form['username'])[0], indent=2))
-            token = jwt.encode(data, conf.SS_TKN_SCRET_KEY, algorithm='HS256').decode('utf-8')
+            
+            tmpData = validacionSeguridad.ObtenerDatosUsuario(request.form['username'])[0]
+            data = json.loads(json.dumps(tmpData, indent=2))
+            
+            _cookie_data =json.dumps(tmpData, sort_keys = True, indent=4)
+            
+            token = jwt.encode(data, conf.SS_TKN_SCRET_KEY, algorithm=conf.ENCRYPT_ALGORITHM).decode('utf-8')
+            
             arrayValues={}
             device=Utils.DetectarDispositivo(request.headers.get('User-Agent'))
             arrayValues['key']= str(token)
@@ -95,38 +102,36 @@ class AutenticacionUsuarios(Resource):
             arrayValues['dspstvo_accso']=str(device)
             arrayValues['id_lgn_ge']=str(data['id_lgn_ge'])
             self.InsertGestionAcceso(arrayValues)
-            response = make_response( '{"access_token":"'+str(token)+'"}',200)
+            response = make_response( '{"access_token":"'+str(token)+'","cookie_higia":'+ str(_cookie_data) +'}',200)
             response.headers['Content-type'] = "application/json"
             response.headers['charset']="utf-8"
             response.headers["Access-Control-Allow-Origin"]= "*"
-            response.headers["Set-cookie"]=str(token)
             return response
         else:
             return Utils.nice_json({"error":errors.ERR_NO_USRO_CNTSN_INVLD},400)
-        
+    
+   
     def MenuDefectoUsuario(self):
         token = request.headers['Authorization']
+       
         if token:
             validacionSeguridad.ValidacionToken(token) 
             if validacionSeguridad :
                 DatosUsuario = jwt.decode(token, conf.SS_TKN_SCRET_KEY, 'utf-8')
                 id_lgn_prfl_scrsl = validacionSeguridad.validaUsuario(DatosUsuario['lgn'])
-                print(DatosUsuario)
+                
                 if type(id_lgn_prfl_scrsl) is not dict:
                     return id_lgn_prfl_scrsl
                 
-                Cursor = lc_cnctn.queryFree(" select "\
-                                    " c.dscrpcn as text , "\
-                                    " b.id_mnu as id ,"\
-                                    " c.id_mnu as parentid ,"\
-                                    " c.lnk "\
-                                    " FROM ssi7x.tblogins_perfiles_menu a INNER JOIN "\
-                                    " ssi7x.tbmenu_ge b on a.id_mnu_ge=b.id INNER JOIN "\
-                                    " ssi7x.tbmenu c ON b.id_mnu = c.id "\
-                                    " where a.estdo=true "\
-                                    " and b.estdo=true "\
-                                    " and a.id_lgn_prfl_scrsl = "+str(id_lgn_prfl_scrsl['id_prfl_scrsl'])+" ORDER BY "\
-                                    " cast(c.ordn as integer)")
+                strQuery = 'SELECT a."text",a.id,a.parentid,a.lnk,(d.id is Not Null) favorito '\
+                                'FROM (select  c.dscrpcn as text ,  b.id_mnu as id , c.id_mnu as parentid , c.lnk ,a.id Mid '\
+                                'FROM ssi7x.tblogins_perfiles_menu a INNER JOIN '\
+                                'ssi7x.tbmenu_ge b on a.id_mnu_ge=b.id INNER JOIN '\
+                                'ssi7x.tbmenu c ON b.id_mnu = c.id '\
+                                'where a.estdo=true  and b.estdo=true  and a.id_lgn_prfl_scrsl =' +str(id_lgn_prfl_scrsl['id_prfl_scrsl'])+ ' '\
+                                'ORDER BY  cast(c.ordn as integer) )a LEFT JOIN ssi7x.tbfavoritosmenu d on d.id_lgn_prfl_mnu = a.Mid'
+                
+                Cursor = lc_cnctn.queryFree(strQuery)
                 if Cursor :    
                     data = json.loads(json.dumps(Cursor, indent=2))
                     return Utils.nice_json(data,200)
