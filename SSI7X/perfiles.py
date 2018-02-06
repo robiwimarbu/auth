@@ -33,7 +33,7 @@ class Perfiles(Resource):
         if kwargs['page']=='ListarPerfiles':
             return self.ListarPerfiles()
         if kwargs['page']=='ActualizarPerfil':
-            return self.ListarPerfiles()
+            return self.ActualizarPerfil()
     
     def crear(self):
                         
@@ -62,7 +62,7 @@ class Perfiles(Resource):
                 arrayValuesDetalle['fcha_mdfccn'] = str(self.fecha_act)
                 self.lc_cnctn.queryInsert(dbConf.DB_SHMA+".tbperfiles_une", arrayValuesDetalle)
             else:    
-                print('error')        
+                return self.Utils.nice_json({"error":"null"},400)    
         else:
             return self.Utils.nice_json({"error":"null"},400)
         
@@ -73,15 +73,21 @@ class Perfiles(Resource):
         validacionSeguridad = ValidacionSeguridad()
         
         if validacionSeguridad.Principal(token, ln_opcn_mnu):
+            print(request.headers)
             lc_dta = ''
-            lc_cdgo     = request.form["cdgo"]
-            lc_dscrpcn  = request.form["dscrpcn"]
-            ln_id_undd_ngco = str(3)
-            if lc_cdgo :
+            try:
+                lc_cdgo     = request.form["cdgo"]
                 lc_dta = lc_dta +" and a.cdgo = '" + lc_cdgo +"' "
-            if lc_dscrpcn:
+            except Exception:
+                pass
+            lc_dscrpcn = ''
+            try:
+                lc_dscrpcn  = request.form["dscrpcn"]
                 lc_dta = lc_dta + "  and a.dscrpcn like '%" + lc_dscrpcn + "%' "
-                   
+            except Exception:
+                pass  
+            ln_id_undd_ngco = str(3)
+           
             Cursor = self.lc_cnctn.queryFree(" select b.id, "\
                                     " a.cdgo,a.dscrpcn "\
                                     " from "\
@@ -111,31 +117,33 @@ class Perfiles(Resource):
         
         if validacionSeguridad.Principal(token, ln_opcn_mnu):
             DatosUsuarioToken = jwt.decode(token, conf.SS_TKN_SCRET_KEY, 'utf-8')
-            datosUsuario = validacionSeguridad.ObtenerDatosUsuario(DatosUsuarioToken['lgn'])[0]                      
+            datosUsuario = validacionSeguridad.ObtenerDatosUsuario(DatosUsuarioToken['lgn'])[0]    
+                            
             lc_cdgo     = request.form["cdgo"]
             lc_dscrpcn  = request.form["dscrpcn"]  
             ln_id_prfl_une = request.form["id_prfl_une"]
-            lb_estdo    = request.form["estdo"]           
+            lb_estdo    = request.form["estdo"]   
+               
             arrayValues={}
             arrayValuesDetalle={}
             #Actualizo tabla une
-            arrayValuesDetalle['id_lgn_mdfccn_ge']  =  ln_id_prfl_une
+            arrayValuesDetalle['id_lgn_mdfccn_ge']  =  str(datosUsuario['id_lgn_ge'])  
             arrayValuesDetalle['estdo']             =  lb_estdo            
-            arrayValuesDetalle['fcha_mdfccn']       =  str(self.fcha_actl)                    
-            self.UsuarioActualizaRegistro(arrayValuesDetalle,'tbperfiles_une')
+            arrayValuesDetalle['fcha_mdfccn']       =  str(self.fecha_act)               
+            self.lc_cnctn.queryUpdate(dbConf.DB_SHMA+"."+str('tbperfiles_une'), arrayValuesDetalle,'id='+str(ln_id_prfl_une))
             #obtengo id_lgn a partir del id_lgn_ge
-            Cursor = self.lc_cnctn.querySelect(dbConf.DB_SHMA +'.tbperfiles_une', 'id_prfl', "id="+str(ln_id_prfl_une))
+            Cursor = self.lc_cnctn.querySelect(dbConf.DB_SHMA +'.tbperfiles_une', 'id_prfl', "id="+ln_id_prfl_une)
             if Cursor :
                 data        = json.loads(json.dumps(Cursor[0], indent=2))
                 ln_id_prfl  = data['id_prfl']
-            #Actualizo tabla principal
-            arrayValues['id']     = ln_id_prfl
-            arrayValues['cdgo']   = str(lc_cdgo)
-            arrayValues['dscrpcn']= lc_dscrpcn
-            arrayValues['estdo']  = lb_estdo
-            self.UsuarioActualizaRegistro(arrayValues,'tbperfiles')
+                #Actualizo tabla principal
+                arrayValues['id']     = ln_id_prfl
+                arrayValues['cdgo']   = str(lc_cdgo)
+                arrayValues['dscrpcn']= lc_dscrpcn
+                arrayValues['estdo']  = lb_estdo
+                self.lc_cnctn.queryUpdate(dbConf.DB_SHMA+"."+str('tbperfiles'), arrayValues,'id='+str(ln_id_prfl))
         else:
-            return self.Utils.nice_json({"error":"null"},400)
+            return self.Utils.nice_json({"error":"null"},400) 
         
          
         
