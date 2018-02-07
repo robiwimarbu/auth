@@ -1,15 +1,19 @@
+'''
+Created on 23/01/2018
+
+@author: EDISON.BEJARANO
+'''
 import json # @UnresolvedImport
 from SSI7X.Static.ConnectDB import ConnectDB  # @UnresolvedImport
 from SSI7X.Static.Utils import Utils  # @UnresolvedImport
 from flask_restful import request, Resource
-from wtforms import Form, validators, StringField , IntegerField, BooleanField
+from wtforms import Form, validators, StringField , IntegerField
 from SSI7X.ValidacionSeguridad import ValidacionSeguridad  # @UnresolvedImport
 import SSI7X.Static.labels as labels # @UnresolvedImport
 import SSI7X.Static.errors as errors  # @UnresolvedImport
 import SSI7X.Static.config_DB as dbConf # @UnresolvedImport
-import jwt
+import jwt,time
 import SSI7X.Static.config as conf  # @UnresolvedImport
-import time
 
 ##clase de llamado para validar datos desde labels
 class DatosPerfil(Form):
@@ -143,7 +147,4 @@ class Perfiles(Resource):
                 arrayValues['estdo']  = lb_estdo
                 self.lc_cnctn.queryUpdate(dbConf.DB_SHMA+"."+str('tbperfiles'), arrayValues,'id='+str(ln_id_prfl))
         else:
-            return self.Utils.nice_json({"error":"null"},400) 
-        
-         
-        
+            return self.Utils.nice_json({"error":"null"},400)

@@ -1,11 +1,14 @@
 '''
-Clase para la gestion de usuarios del sistema
+Created on 5/01/2018
 
+@author: ROBIN:VALENCIA
+
+Clase para la gestion de usuarios del sistema
 '''
 import hashlib,socket,json # @UnresolvedImport
 from IPy import IP
 from flask import make_response # @UnresolvedImpor
-from flask_restful import request, Resource, reqparse
+from flask_restful import request, Resource
 from wtforms import Form, validators, StringField
 from SSI7X.Static.ConnectDB import ConnectDB  # @UnresolvedImport
 from SSI7X.Static.Utils import Utils  # @UnresolvedImport
@@ -15,7 +18,6 @@ import SSI7X.Static.errors as errors  # @UnresolvedImport
 import SSI7X.Static.labels as labels  # @UnresolvedImport
 import SSI7X.Static.config as conf  # @UnresolvedImport
 import SSI7X.Static.config_DB as dbConf # @UnresolvedImport
-from user_agents import parse 
 import jwt #@UnresolvedImport
 from SSI7X.ValidacionSeguridad import ValidacionSeguridad # @UnresolvedImport
 
