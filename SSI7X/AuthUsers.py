@@ -33,11 +33,16 @@ clase para la validacion de datos provenientes del POST en el login
 '''
 class UsuarioAcceso(Form):
     username = StringField(labels.lbl_nmbr_usrs,[validators.DataRequired(message=errors.ERR_NO_INGSA_USRO)])
+
+    password = StringField(labels.lbl_cntrsna_usrs,[validators.DataRequired(message=errors.ERR_NO_INGRSA_CNTRSNA)]) 
+    
+
     password = StringField(labels.lbl_cntrsna_usrs,[validators.DataRequired(message=errors.ERR_NO_INGRSA_CNTRSNA)])
 
 '''
 clase para la validacion de datos del POST en el cambio de contrasenna
 '''
+
 class UsroCmbioCntrsna(Form):
     cntrsna = StringField(labels.lbl_cntrsna_usrs,[validators.DataRequired(message=errors.ERR_NO_INGRSA_CNTRSNA)])
     cntrsna_nva = StringField(labels.lbl_nva_cntrsna,[validators.DataRequired(message=errors.ERR_NO_DB_INGRSR_NVA_CNTRSNA),validators.Length(min=conf.PW_MN_SIZE,message=errors.ERR_NO_MNM_CRCTRS),validators.Regexp('(?=.*\d)',message=errors.ERR_NO_MNMO_NMRO),validators.Regexp('(?=.*[A-Z])',message=errors.ERR_NO_MNMO_MYSCLA)])

@@ -40,7 +40,6 @@ class Perfiles(Resource):
             return self.ActualizarPerfil()
     
     def crear(self):
-                        
         lob_rspsta = DatosPerfil(request.form)
         if not lob_rspsta.validate(): 
             return self.Utils.nice_json({"error":lob_rspsta.errors},400)
