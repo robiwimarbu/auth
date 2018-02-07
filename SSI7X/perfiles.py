@@ -73,8 +73,8 @@ class Perfiles(Resource):
         validacionSeguridad = ValidacionSeguridad()
         
         if validacionSeguridad.Principal(token, ln_opcn_mnu):
-            print(request.headers)
             lc_dta = ''
+            lc_cdgo  =''
             try:
                 lc_cdgo     = request.form["cdgo"]
                 lc_dta = lc_dta +" and a.cdgo = '" + lc_cdgo +"' "
@@ -87,21 +87,21 @@ class Perfiles(Resource):
             except Exception:
                 pass  
             ln_id_undd_ngco = str(3)
-           
-            Cursor = self.lc_cnctn.queryFree(" select b.id, "\
+            
+            strSql = " select b.id, "\
                                     " a.cdgo,a.dscrpcn "\
                                     " from "\
                                     " ssi7x.tbperfiles a inner join  ssi7x.tbperfiles_une b on "\
                                     " a.id=b.id_prfl "\
                                     " where "\
-                                    " b.id_undd_ngco = "+str(ln_id_undd_ngco)+" and  a.estdo = true "\
-                                    " and b.estdo = true  "+ lc_dta +""\
-                                    " order by a.dscrpcn")    
+                                    " b.id_undd_ngco = "+str(ln_id_undd_ngco) +" "+ lc_dta +""\
+                                    " order by a.dscrpcn"
+            Cursor = self.lc_cnctn.queryFree(strSql)    
             if Cursor :    
                 data = json.loads(json.dumps(Cursor, indent=2))
                 return self.Utils.nice_json(data,200)
             else:
-                return self.Utils.nice_json({"error":errors.ERR_NO_USRO_SN_MNU},400)
+                return self.Utils.nice_json({"error":errors.INFO_NO_DTS},200)
         else:
             return self.Utils.nice_json({"error":"null"},400)
         
