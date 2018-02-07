@@ -1,3 +1,10 @@
+'''
+Created on 22/01/2018
+
+@author: ROBIN.VALENCIA,EDISON.BEJARANO
+
+Clase para la gestion de usuarios del sistema
+'''
 from _codecs import decode
 from flask_restful import Resource
 from SSI7X.Static.ConnectDB import ConnectDB  # @UnresolvedImport
