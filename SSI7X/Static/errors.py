@@ -30,4 +30,3 @@ ERR_NO_PRGTA='Debe ingresar una pregunta'
 ERR_NO_RSPSTA='Debe ingresar una respuesta'
 ERR_NO_CDGO_PRGNTA = 'Debe Ingresar un código para la pregunta'
 ERR_NO_ATRZCN = 'Usuario sin Autorización'
-ERR_NO_RGSTRS = 'No hay Registros';

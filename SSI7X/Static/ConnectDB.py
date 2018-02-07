@@ -71,7 +71,7 @@ class ConnectDB():
     
     def queryUpdate(self,table,objectValues,clause = NULL):
         set=''
-        for key, value in objectValues.iteritems():
+        for key, value in objectValues.items():
             strValue = str(value)
             if not strValue.isnumeric(): 
                 set += key + "='" + value + "',"

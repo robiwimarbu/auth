@@ -9,14 +9,10 @@ from SSI7X.Static.ConnectDB import ConnectDB  # @UnresolvedImport
 from SSI7X.Static.Utils import Utils  # @UnresolvedImport
 import SSI7X.Static.errors as errors  # @UnresolvedImport
 import SSI7X.Static.labels as labels  # @UnresolvedImport
-from SSI7X.AuthUsers import AutenticacionUsuarios 
 import SSI7X.Static.config_DB as dbConf # @UnresolvedImport   
 import SSI7X.Static.config as conf  # @UnresolvedImport 
-import jwt #@UnresolvedImport
-import time
+import time,json,jwt
 from SSI7X.ValidacionSeguridad import ValidacionSeguridad  # @UnresolvedImport
-import json # @UnresolvedImport
-  # @UnresolvedImport
 
 '''
 Declaracion de variables globales
@@ -29,9 +25,7 @@ C = ConnectDB()
 class Acceso(Form):
     cdgo = StringField(labels.lbl_cdgo,[validators.DataRequired(message=errors.ERR_NO_CDGO_PRGNTA)])
     dscrpcn = StringField(labels.lbl_prgnta,[validators.DataRequired(message=errors.ERR_NO_PRGTA)])
-    #dscrpcn_rspsta= StringField(labels.lbl_prgnta,[validators.DataRequired(message=errors.ERR_NO_RSPSTA)])
-    #username = StringField(labels.lbl_lgn,[validators.DataRequired(message=errors.ERR_NO_INGSA_USRO)]) 
-    #password = StringField(labels.lbl_cntrsna,[validators.DataRequired(message=errors.ERR_NO_INGRSA_CNTRSNA)])
+
 class ActualizarAcceso(Form):
     id_prgnta_ge = StringField(labels.lbl_nmbr_usrs,[validators.DataRequired(message=errors.ERR_NO_SN_PRMTRS)])
     cdgo = StringField(labels.lbl_lgn,[validators.DataRequired(message=errors.ERR_NO_CDGO_PRGNTA)]) 
@@ -72,7 +66,6 @@ class Preguntas(Resource):
             arrayValues['id_lgn_crcn_ge']=str(datosUsuario['id_lgn_ge'])
             arrayValues['id_lgn_mdfccn_ge']=str(datosUsuario['id_lgn_ge'])  
             id_prgnta=self.crearPregunta_seguridad(arrayValues,'tbpreguntas_seguridad' )
-            #id_pregunta_seguridad=self.C.queryInsert(dbConf.DB_SHMA+".tbpreguntas_seguridad",arrayValues,'id')  
             arrayValues2['id_prgnta_sgrdd']=str(id_prgnta)
             arrayValues2['id_lgn_crcn_ge']=str(datosUsuario['id_lgn_ge'])
             arrayValues2['id_lgn_mdfccn_ge']=str(datosUsuario['id_lgn_ge'])
@@ -81,7 +74,7 @@ class Preguntas(Resource):
             arrayValues2['id_lgn_ge']=str(datosUsuario['id_lgn_ge'])
             self.crearPregunta_seguridad(arrayValues2,'tbpreguntas_seguridad_ge')
             return Utils.nice_json({"error":labels.SCCSS_RGSTRO_EXTSO},200)
-        #return self.C.queryInsert(dbConf.DB_SHMA+".tbpreguntas_seguridad", objectValues,'id')  
+
         return Utils.nice_json({"error":errors.ERR_NO_ATRZCN},400)       
     
     def ObtenerPreguntas(self): 
@@ -145,7 +138,7 @@ class Preguntas(Resource):
             #Actualizo tabla principal
             arrayValues2['id']=id_prgnta
             arrayValues2['cdgo']=request.form['cdgo']
-            arrayValues2['dscrpcn']=request.form['dscrpcn'] #pendiente encriptar la contraseña
+            arrayValues2['dscrpcn']=request.form['dscrpcn']
             arrayValues2['fcha_mdfccn']=str(fecha_act)
             arrayValues2['id_lgn_mdfccn_ge']=str(id_lgn_ge_ssn['id_lgn_ge'])
             
