@@ -57,8 +57,7 @@ class AutenticacionUsuarios(Resource):
             
     def login(self):    
         ingreso=False
-        print(request.form)
-        
+      
         u = UsuarioAcceso(request.form)
         
         if not u.validate():
