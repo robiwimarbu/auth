@@ -17,6 +17,7 @@ from SSI7X.ValidacionSeguridad import ValidacionSeguridad # @UnresolvedImport
 import SSI7X.Static.config_DB as dbConf # @UnresolvedImport
 from SSI7X.Static.UploadFiles import UploadFiles  # @UnresolvedImport
 from _overlapped import NULL
+import hashlib
 
 lc_cnctn = ConnectDB()
 Utils = Utils()
@@ -46,14 +47,13 @@ class Usuarios(Resource):
         elif kwargs['page'] == 'insertar_usuario':
             return self.InsertarUsuarios()
         elif kwargs['page'] == 'actualizar_usuario':
-            return self.ActualzarUsuario()
+            return self.ActualizarUsuario()
     
     def ObtenerUsuarios(self,parametros):
         token = request.headers['Authorization']
         ln_opcn_mnu = request.form["id_mnu"]
         validacionSeguridad = ValidacionSeguridad()
         val = validacionSeguridad.Principal(token,ln_opcn_mnu)
-        
         
         prmtrs=''
         if parametros:
@@ -71,7 +71,7 @@ class Usuarios(Resource):
             Cursor = lc_cnctn.queryFree(" select "\
                                     " a.id, b.lgn, b.nmbre_usro, b.fto_usro "\
                                     " from "\
-                                    " ssi7x.tblogins_ge a inner join ssi7x.tblogins b on "\
+                                    " tblogins_ge a inner join "+dbConf.DB_SHMA+".tblogins b on "\
                                     " a.id_lgn = b.id "\
                                     " where "\
                                     " a.estdo = true "\
@@ -92,6 +92,7 @@ class Usuarios(Resource):
         ln_opcn_mnu = request.form["id_mnu"]
         validacionSeguridad = ValidacionSeguridad()
         val = validacionSeguridad.Principal(token,ln_opcn_mnu)
+        lc_cntrsna = hashlib.md5(request.form['password'].encode('utf-8')).hexdigest()
         #Validar los campos requeridos.
         u = AcInsertarAcceso(request.form)
         if not u.validate():
@@ -106,23 +107,45 @@ class Usuarios(Resource):
             arrayValues={}
             arrayValues3={}
             arrayValues['lgn']=request.form['login']
-            arrayValues['cntrsna']=request.form['password'] #pendiente encriptar la contraseña
+            arrayValues['cntrsna']=lc_cntrsna #pendiente encriptar la contraseña
             arrayValues['nmbre_usro']=request.form['nombre_usuario']
-            arrayValues['fto_usro']=request.form['login'] #pendiente traer imagen
-            id_lgn = self.UsuarioInsertaRegistro(arrayValues,'tblogins')
-            arrayValues3['id_lgn']=str(id_lgn)
             arrayValues3['fcha_crcn']=str(fcha_actl)
             arrayValues3['fcha_mdfccn']=str(fcha_actl)
             arrayValues3['id_grpo_emprsrl']='2' #pendiente traer esta variable de una cookie
+            
+            '''
+            Validar repetidos
+            ''' 
+            lc_tbls_query = dbConf.DB_SHMA+".tblogins_ge a INNER JOIN "+dbConf.DB_SHMA+".tblogins b on a.id_lgn=b.id "
+            CursorValidar = lc_cnctn.querySelect(lc_tbls_query, ' b.id ', " b.lgn = '"+str(arrayValues['lgn'])+"' ")
+            if CursorValidar:
+                return Utils.nice_json({"error":labels.lbl_lgn+" "+errors.ERR_RGSTRO_RPTDO},400) 
+
+            id_lgn = self.UsuarioInsertaRegistro(arrayValues,'tblogins')
+            arrayValues3['id_lgn']=str(id_lgn)
+            lc_nmbre_imgn = str(hashlib.md5(str(id_lgn).encode('utf-8')).hexdigest())+'.jpg'
+            
+            arrayGuardarArchivo = self.GuardarArchivo(request.files,'imge_pth',conf.SV_DIR_IMAGES,lc_nmbre_imgn,True)
+            if arrayGuardarArchivo['status']=='error':
+                return Utils.nice_json({"error":arrayGuardarArchivo['retorno']},400) 
+            else:
+                arrayValues['fto_usro'] = str(arrayGuardarArchivo["retorno"])
+            
+            '''
+            Actualizo el registro con el nombre de la imagen
+            ''' 
+            arrayValues['id']=str(id_lgn)
+            self.UsuarioActualizaRegistro(arrayValues,'tblogins')
+            
             id_lgn_ge=self.UsuarioInsertaRegistro(arrayValues3,'tblogins_ge')
             return Utils.nice_json({"error":errors.SCCSS_RGSTRO_EXTSO},200)
             '''
-                Fin de la insercion de los datos
+            Fin de la insercion de los datos
             '''
         else:
             return Utils.nice_json({"error":errors.ERR_NO_ATRZCN},400)
     
-    def ActualzarUsuario(self):
+    def ActualizarUsuario(self):
         token = request.headers['Authorization']
         fcha_actl = time.ctime()
         ln_opcn_mnu = request.form["id_mnu"]
@@ -136,8 +159,10 @@ class Usuarios(Resource):
         if val :
             DatosUsuario = jwt.decode(token, conf.SS_TKN_SCRET_KEY, 'utf-8')
             id_lgn_ge_ssn = validacionSeguridad.validaUsuario(DatosUsuario['lgn'])
+            md5 = hashlib.md5(request.form['password'].encode('utf-8')).hexdigest()
+            
             '''
-                Aqui Actualizamos los datos del usuario
+                INSERTAR DATOS
             '''
             arrayValues={}
             arrayValues2={}
@@ -145,50 +170,44 @@ class Usuarios(Resource):
             arrayValues2['id']=request.form['id_login_ge']
             arrayValues2['fcha_mdfccn']=str(fcha_actl)
             arrayValues2['id_grpo_emprsrl']='2' #pendiente traer esta variable de una cookie
+            arrayValues['lgn']=request.form['login']
+            arrayValues['cntrsna']=md5 #pendiente encriptar la contraseña
+            arrayValues['nmbre_usro']=request.form['nombre_usuario']
+            '''
+            Validar repetidos
+            ''' 
+            lc_tbls_query = dbConf.DB_SHMA+".tblogins_ge a INNER JOIN "+dbConf.DB_SHMA+".tblogins b on a.id_lgn=b.id "
+            CursorValidar = lc_cnctn.querySelect(lc_tbls_query, ' b.id ', " a.id <> "+str(arrayValues2['id'])+" AND b.lgn = '"+str(arrayValues['lgn'])+"' ")
+            if CursorValidar:
+                return Utils.nice_json({"error":labels.lbl_lgn+" "+errors.ERR_RGSTRO_RPTDO},400) 
+               
+            '''
+            Insertar en la tabla auxiliar y obtener id de creacion
+            ''' 
             self.UsuarioActualizaRegistro(arrayValues2,'tblogins_ge')
             #obtengo id_lgn a partir del id_lgn_ge
-            Cursor = lc_cnctn.querySelect(dbConf.DB_SHMA +'.tblogins_ge', 'id_lgn', "id="+str(request.form['id_login_ge']))
+            Cursor = lc_cnctn.querySelect(dbConf.DB_SHMA +'.tblogins_ge', 'id_lgn', "id="+str(arrayValues2['id']))
             if Cursor :
                 data = json.loads(json.dumps(Cursor[0], indent=2))
                 id_lgn = data['id_lgn']
             #Actualizo tabla principal
             arrayValues['id']=id_lgn
-            arrayValues['lgn']=request.form['login']
-            arrayValues['cntrsna']=request.form['password'] #pendiente encriptar la contraseña
-            arrayValues['nmbre_usro']=request.form['nombre_usuario']
-            arrayValues['fto_usro']=request.form['login'] #pendiente traer imagen
             
-            #print(request.files)
             '''
-                CARGA DE IMAGEN
+            Guardar la imagen en la ruta especificada
             '''
-            #guardar la imagen
-            resultImageUpload={}
-            if 'imge_pth' in request.files:
-                nameFile = 'prueba.jpg'
-                mFile = UploadFiles(conf.SV_DIR_IMAGES,NULL,True)
-                print(request.files)
-                print(request.files['imge_pth'])
-                resultImageUpload = mFile.upload(request.files['imge_pth'])
-                #Check status uploadimage
-                if resultImageUpload["status"] == "OK":
-                    #update column image on user
-                    fullpath = conf.SV_DIR_IMAGES + conf.UTIL_DS + resultImageUpload["namefile"]
-                    #lc_cnctn.queryUpdate(conf.TBL_TBUSERS,{"imge_pth":fullpath},"id="+str(id_lgn))
-                    #lc_cnctn.queryUpdate(dbConf.DB_SHMA+"."+str(table_name), objectValues,'id='+str(objectValues['id']))
-                    return Utils.nice_json({"status":"ok","error":"null","user":str(id_lgn)},200)
-                else:
-                    return Utils.nice_json({"status":"error","error":"no se pudo guardar la imagen","user":str(id_lgn)},400)
+            lc_nmbre_imgn = str(hashlib.md5(str(arrayValues['id']).encode('utf-8')).hexdigest())+'.jpg'
+            arrayGuardarArchivo = self.GuardarArchivo(request.files,'imge_pth',conf.SV_DIR_IMAGES,lc_nmbre_imgn,True)
+            if arrayGuardarArchivo['status']=='error':
+                return Utils.nice_json({"error":arrayGuardarArchivo['retorno']},400) 
             else:
-                return Utils.nice_json({"status":"error","error":"null","user":str(id_lgn)},400)
-            '''
-                FIN CARGA DE IMAGEN
-            '''
+                arrayValues['fto_usro'] = str(arrayGuardarArchivo["retorno"]) 
+            
             #ACTUALIZACION TABLA LOGINS OK
             self.UsuarioActualizaRegistro(arrayValues,'tblogins')
             return Utils.nice_json({"error":errors.SCCSS_ACTLZCN_EXTSA},200) 
             '''
-                Fin de la insercion de los datos
+                FIN INSERTAR DATOS
             '''
         else:
             return Utils.nice_json({"error":errors.ERR_NO_ATRZCN},400)
@@ -198,3 +217,29 @@ class Usuarios(Resource):
     
     def UsuarioActualizaRegistro(self,objectValues,table_name):
         return lc_cnctn.queryUpdate(dbConf.DB_SHMA+"."+str(table_name), objectValues,'id='+str(objectValues['id']))
+    
+    def GuardarArchivo(self,file,cmpo, drccn_imgn,nmbre_archvo,crr_drccn):
+        arrayRespuesta = {}
+        '''
+            CARGA DE IMAGEN
+        '''
+        #guardar la imagen
+        resultImageUpload={}
+        if cmpo in file:
+            mFile = UploadFiles(drccn_imgn,nmbre_archvo,crr_drccn)
+            resultImageUpload = mFile.upload(file[cmpo])
+            
+           # print(mFile.getExtensionFile(fullPath))
+            
+            #Check status uploadimage
+            if resultImageUpload["status"] == "OK":
+                arrayRespuesta['status']='OK'
+                arrayRespuesta['retorno']=resultImageUpload["namefile"]
+            else:
+                arrayRespuesta['status']='error'
+                arrayRespuesta['retorno']=errors.ERR_NO_IMGN_GRDDA
+        else:
+            arrayRespuesta['status']='error'
+            arrayRespuesta['retorno']=errors.ERR_NO_ARCVO_DFNDO
+            
+        return arrayRespuesta
