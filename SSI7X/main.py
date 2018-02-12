@@ -25,6 +25,7 @@ api = Api( auth, prefix="/api")
 api.add_resource(AutenticacionUsuarios,'/auth/<page>')
 api.add_resource(Perfiles,'/perfiles/<page>')
 api.add_resource(Preguntas,'/preguntasSg/<page>')
+api.add_resource(Usuarios,'/users/<page>')
 
 
 if __name__ == '__main__':
