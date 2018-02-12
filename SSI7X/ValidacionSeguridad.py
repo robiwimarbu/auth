@@ -11,8 +11,7 @@ from SSI7X.Static.ConnectDB import ConnectDB  # @UnresolvedImport
 from SSI7X.Static.Utils import Utils  # @UnresolvedImport
 import SSI7X.Static.errors as errors  # @UnresolvedImport
 import SSI7X.Static.config as conf  # @UnresolvedImport
-import jwt #@UnresolvedImport
-import json # @UnresolvedImport
+import jwt,json #@UnresolvedImport
 
 #clase para manejo de permisos por usuario menu 
 class ValidacionSeguridad(Resource):
@@ -92,11 +91,15 @@ class ValidacionSeguridad(Resource):
                              " prstdr.crro_elctrnco" \
                              " end as crro_elctrnco," \
                              " lgn_ge.id as id_lgn_ge, " \
-                             " lgn.lgn as lgn " \
+                             " lgn.lgn as lgn, " \
+                             " crgo.dscrpcn as crgo, " \
+                             " lgn.fto_usro as fto_usro "\
                              " from ssi7x.tblogins_ge lgn_ge " \
                              " left join ssi7x.tblogins lgn on lgn.id = lgn_ge.id_lgn " \
                              " left join ssi7x.tbempleados_une emplds_une on emplds_une.id_lgn_accso_ge = lgn_ge.id " \
                              " left join ssi7x.tbempleados emplds on emplds.id = emplds_une.id_empldo " \
                              " left join ssi7x.tbprestadores prstdr on prstdr.id_lgn_accso_ge = lgn_ge.id " \
+                             " left join ssi7x.tbcargos_une crgo_une on crgo_une.id = emplds_une.id_crgo_une " \
+                             " left join ssi7x.tbcargos crgo on crgo.id = crgo_une.id_crgo " \
                              " where lgn.lgn = '"+usuario+"'")
         return cursor

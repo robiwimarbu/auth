@@ -1,9 +1,6 @@
 '''
-Created on 5/01/2018
-
-@author: ROBIN:VALENCIA
-
 Clase para la gestion de usuarios del sistema
+
 '''
 import hashlib,socket,json # @UnresolvedImport
 from IPy import IP
@@ -33,16 +30,11 @@ clase para la validacion de datos provenientes del POST en el login
 '''
 class UsuarioAcceso(Form):
     username = StringField(labels.lbl_nmbr_usrs,[validators.DataRequired(message=errors.ERR_NO_INGSA_USRO)])
-
-    password = StringField(labels.lbl_cntrsna_usrs,[validators.DataRequired(message=errors.ERR_NO_INGRSA_CNTRSNA)]) 
-    
-
     password = StringField(labels.lbl_cntrsna_usrs,[validators.DataRequired(message=errors.ERR_NO_INGRSA_CNTRSNA)])
 
 '''
 clase para la validacion de datos del POST en el cambio de contrasenna
 '''
-
 class UsroCmbioCntrsna(Form):
     cntrsna = StringField(labels.lbl_cntrsna_usrs,[validators.DataRequired(message=errors.ERR_NO_INGRSA_CNTRSNA)])
     cntrsna_nva = StringField(labels.lbl_nva_cntrsna,[validators.DataRequired(message=errors.ERR_NO_DB_INGRSR_NVA_CNTRSNA),validators.Length(min=conf.PW_MN_SIZE,message=errors.ERR_NO_MNM_CRCTRS),validators.Regexp('(?=.*\d)',message=errors.ERR_NO_MNMO_NMRO),validators.Regexp('(?=.*[A-Z])',message=errors.ERR_NO_MNMO_MYSCLA)])
@@ -132,12 +124,12 @@ class AutenticacionUsuarios(Resource):
                     return id_lgn_prfl_scrsl
                 
                 strQuery = 'SELECT a."text",a.id,a.parentid,a.lnk,(d.id is Not Null) favorito '\
-                                'FROM (select  c.dscrpcn as text ,  b.id_mnu as id , c.id_mnu as parentid , c.lnk ,a.id Mid '\
+                                'FROM (select  c.dscrpcn as text ,  b.id_mnu as id , c.id_mnu as parentid , c.lnk ,a.id Mid,c.ordn '\
                                 'FROM ssi7x.tblogins_perfiles_menu a INNER JOIN '\
                                 'ssi7x.tbmenu_ge b on a.id_mnu_ge=b.id INNER JOIN '\
                                 'ssi7x.tbmenu c ON b.id_mnu = c.id '\
                                 'where a.estdo=true  and b.estdo=true  and a.id_lgn_prfl_scrsl =' +str(id_lgn_prfl_scrsl['id_prfl_scrsl'])+ ' '\
-                                'ORDER BY  cast(c.ordn as integer) )a LEFT JOIN ssi7x.tbfavoritosmenu d on d.id_lgn_prfl_mnu = a.Mid'
+                                ' )a LEFT JOIN ssi7x.tbfavoritosmenu d on d.id_lgn_prfl_mnu = a.Mid ORDER BY  cast(a.ordn as integer)'
                 
                 Cursor = lc_cnctn.queryFree(strQuery)
                 if Cursor :    
