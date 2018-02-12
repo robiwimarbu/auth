@@ -124,12 +124,12 @@ class AutenticacionUsuarios(Resource):
                     return id_lgn_prfl_scrsl
                 
                 strQuery = 'SELECT a."text",a.id,a.parentid,a.lnk,(d.id is Not Null) favorito '\
-                                'FROM (select  c.dscrpcn as text ,  b.id_mnu as id , c.id_mnu as parentid , c.lnk ,a.id Mid '\
+                                'FROM (select  c.dscrpcn as text ,  b.id_mnu as id , c.id_mnu as parentid , c.lnk ,a.id Mid,c.ordn '\
                                 'FROM ssi7x.tblogins_perfiles_menu a INNER JOIN '\
                                 'ssi7x.tbmenu_ge b on a.id_mnu_ge=b.id INNER JOIN '\
                                 'ssi7x.tbmenu c ON b.id_mnu = c.id '\
                                 'where a.estdo=true  and b.estdo=true  and a.id_lgn_prfl_scrsl =' +str(id_lgn_prfl_scrsl['id_prfl_scrsl'])+ ' '\
-                                'ORDER BY  cast(c.ordn as integer) )a LEFT JOIN ssi7x.tbfavoritosmenu d on d.id_lgn_prfl_mnu = a.Mid'
+                                ' )a LEFT JOIN ssi7x.tbfavoritosmenu d on d.id_lgn_prfl_mnu = a.Mid ORDER BY  cast(a.ordn as integer)'
                 
                 Cursor = lc_cnctn.queryFree(strQuery)
                 if Cursor :    
