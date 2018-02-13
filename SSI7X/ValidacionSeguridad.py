@@ -1,11 +1,17 @@
+'''
+Created on 22/01/2018
+
+@author: ROBIN.VALENCIA,EDISON.BEJARANO
+
+Clase para la gestion de usuarios del sistema
+'''
 from _codecs import decode
 from flask_restful import Resource
 from SSI7X.Static.ConnectDB import ConnectDB  # @UnresolvedImport
 from SSI7X.Static.Utils import Utils  # @UnresolvedImport
 import SSI7X.Static.errors as errors  # @UnresolvedImport
 import SSI7X.Static.config as conf  # @UnresolvedImport
-import jwt #@UnresolvedImport
-import json # @UnresolvedImport
+import jwt,json #@UnresolvedImport
 
 #clase para manejo de permisos por usuario menu 
 class ValidacionSeguridad(Resource):
@@ -84,17 +90,16 @@ class ValidacionSeguridad(Resource):
                              " else" \
                              " prstdr.crro_elctrnco" \
                              " end as crro_elctrnco," \
-                             " lgn_ge.id as id_lgn_ge," \
-                             " lgn.lgn as lgn," \
-                             " lgn_ge.id_grpo_emprsrl grpo_emprsrl,"\
-                             " prfl_scrsl.id_scrsl,"\
-                             " prfl_une.id_undd_ngco undd_ngco "\
+                             " lgn_ge.id as id_lgn_ge, " \
+                             " lgn.lgn as lgn, " \
+                             " crgo.dscrpcn as crgo, " \
+                             " lgn.fto_usro as fto_usro "\
                              " from ssi7x.tblogins_ge lgn_ge " \
                              " left join ssi7x.tblogins lgn on lgn.id = lgn_ge.id_lgn " \
                              " left join ssi7x.tbempleados_une emplds_une on emplds_une.id_lgn_accso_ge = lgn_ge.id " \
                              " left join ssi7x.tbempleados emplds on emplds.id = emplds_une.id_empldo " \
                              " left join ssi7x.tbprestadores prstdr on prstdr.id_lgn_accso_ge = lgn_ge.id " \
-                             " left join ssi7x.tblogins_perfiles_sucursales  prfl_scrsl on prfl_scrsl.id_lgn_ge = lgn_ge.id"\
-                             " left join ssi7x.tbperfiles_une prfl_une on prfl_une.id = prfl_scrsl.id_prfl_une"\
-                             " where lgn.lgn = '"+usuario+"' and prfl_scrsl.mrca_scrsl_dfcto = true")
+                             " left join ssi7x.tbcargos_une crgo_une on crgo_une.id = emplds_une.id_crgo_une " \
+                             " left join ssi7x.tbcargos crgo on crgo.id = crgo_une.id_crgo " \
+                             " where lgn.lgn = '"+usuario+"'")
         return cursor

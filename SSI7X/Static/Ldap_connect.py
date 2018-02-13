@@ -1,3 +1,8 @@
+'''
+Created on 10/01/2018
+
+@author: LUIS:ARAGON
+'''
 import ldap3
 import ssl
 import SSI7X.Static.config as conf  # @UnresolvedImport
