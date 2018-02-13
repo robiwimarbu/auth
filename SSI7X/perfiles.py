@@ -13,7 +13,7 @@ import SSI7X.Static.labels as labels # @UnresolvedImport
 import SSI7X.Static.errors as errors  # @UnresolvedImport
 import SSI7X.Static.config_DB as dbConf # @UnresolvedImport
 import SSI7X.Static.config as conf  # @UnresolvedImport
-import jwt,time,json
+import time,json
 
 ##clase de llamado para validar datos desde labels
 class DatosPerfil(Form):
@@ -44,7 +44,7 @@ class Perfiles(Resource):
         if not lob_rspsta.validate(): 
             return self.Utils.nice_json({"error":lob_rspsta.errors},400)
         
-        ln_opcn_mnu = request.form["id_mnu"]
+        ln_opcn_mnu = request.form["id_mnu_ge"]
         token = request.headers['Authorization']
         validacionSeguridad = ValidacionSeguridad()
         
@@ -71,7 +71,7 @@ class Perfiles(Resource):
         
     def ListarPerfiles(self):
         
-        ln_opcn_mnu = request.form["id_mnu"]
+        ln_opcn_mnu = request.form["id_mnu_ge"]
         token = request.headers['Authorization']
         validacionSeguridad = ValidacionSeguridad()
         
@@ -104,7 +104,7 @@ class Perfiles(Resource):
                 data = json.loads(json.dumps(Cursor, indent=2))
                 return self.Utils.nice_json(data,200)
             else:
-                return self.Utils.nice_json({"error":errors.INFO_NO_DTS},200)
+                return self.Utils.nice_json({"error":labels.INFO_NO_DTS},200)
         else:
             return self.Utils.nice_json({"error":"null"},400)
         
@@ -114,7 +114,7 @@ class Perfiles(Resource):
         if not lob_rspsta.validate(): 
             return self.Utils.nice_json({"error":lob_rspsta.errors},400)
         
-        ln_opcn_mnu = request.form["id_mnu"]
+        ln_opcn_mnu = request.form["id_mnu_ge"]
         token = request.headers['Authorization']
         validacionSeguridad = ValidacionSeguridad()
         

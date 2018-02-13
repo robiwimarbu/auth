@@ -46,7 +46,7 @@ class Preguntas(Resource):
                        
     def crearPregunta(self):
         
-        ln_opcn_mnu = request.form["id_mnu"]
+        ln_opcn_mnu = request.form["id_mnu_ge"]
         token = request.headers['Authorization']
         validacionSeguridad = ValidacionSeguridad()
         val = validacionSeguridad.Principal(token,ln_opcn_mnu)
@@ -78,7 +78,7 @@ class Preguntas(Resource):
         return Utils.nice_json({"error":errors.ERR_NO_ATRZCN},400)       
     
     def ObtenerPreguntas(self): 
-        ln_opcn_mnu = request.form["id_mnu"]
+        ln_opcn_mnu = request.form["id_mnu_ge"]
         token = request.headers['Authorization']
         validacionSeguridad = ValidacionSeguridad()
         val = validacionSeguridad.Principal(token,ln_opcn_mnu)
@@ -112,7 +112,7 @@ class Preguntas(Resource):
     
     def ActualizarPreguntas(self):
         token = request.headers['Authorization']
-        ln_opcn_mnu = request.form["id_mnu"]
+        ln_opcn_mnu = request.form["id_mnu_ge"]
         validacionSeguridad = ValidacionSeguridad()
         val = validacionSeguridad.Principal(token,ln_opcn_mnu)
         u = ActualizarAcceso(request.form)

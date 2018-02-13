@@ -11,7 +11,7 @@ from SSI7X.Static.ConnectDB import ConnectDB  # @UnresolvedImport
 from SSI7X.Static.Utils import Utils  # @UnresolvedImport
 import SSI7X.Static.errors as errors  # @UnresolvedImport
 import SSI7X.Static.labels as labels  # @UnresolvedImport
-import time,jwt,hashlib #@UnresolvedImport
+import time,hashlib #@UnresolvedImport
 from SSI7X.ValidacionSeguridad import ValidacionSeguridad # @UnresolvedImport
 import SSI7X.Static.config_DB as dbConf # @UnresolvedImport
 from SSI7X.Static.UploadFiles import UploadFiles  # @UnresolvedImport
@@ -25,16 +25,17 @@ class ActualizarAcceso(Form):
     login = StringField(labels.lbl_lgn,[validators.DataRequired(message=errors.ERR_NO_INGSA_USRO)]) 
     password = StringField(labels.lbl_cntrsna,[validators.DataRequired(message=errors.ERR_NO_INGRSA_CNTRSNA)])
     nombre_usuario = StringField(labels.lbl_nmbr_usrs,[validators.DataRequired(message=errors.ERR_NO_INGSA_NMBRE_USRO)])
-    #user_photo =  StringField(labels.lbl_cntrsna,[validators.DataRequired(message=errors.ERR_NO_FTO)])
+
 
 class AcInsertarAcceso(Form):
     login = StringField(labels.lbl_lgn,[validators.DataRequired(message=errors.ERR_NO_INGSA_USRO)]) 
     password = StringField(labels.lbl_cntrsna,[validators.DataRequired(message=errors.ERR_NO_INGRSA_CNTRSNA)])
     nombre_usuario = StringField(labels.lbl_nmbr_usrs,[validators.DataRequired(message=errors.ERR_NO_INGSA_NMBRE_USRO)])
-    #user_photo =  StringField(labels.lbl_cntrsna,[validators.DataRequired(message=errors.ERR_NO_FTO)])
+
 
 
 class Usuarios(Resource):
+    
     def post(self, **kwargs):
         if kwargs['page'] == 'listar_usuarios':
             arrayParametros={}
@@ -48,7 +49,7 @@ class Usuarios(Resource):
     
     def ObtenerUsuarios(self,parametros):
         token = request.headers['Authorization']
-        ln_opcn_mnu = request.form["id_mnu"]
+        ln_opcn_mnu = request.form["id_mnu_ge"]
         validacionSeguridad = ValidacionSeguridad()
         val = validacionSeguridad.Principal(token,ln_opcn_mnu)
         
@@ -86,7 +87,7 @@ class Usuarios(Resource):
     def InsertarUsuarios(self):
         token = request.headers['Authorization']
         fcha_actl = time.ctime()
-        ln_opcn_mnu = request.form["id_mnu"]
+        ln_opcn_mnu = request.form["id_mnu_ge"]
         validacionSeguridad = ValidacionSeguridad()
         val = validacionSeguridad.Principal(token,ln_opcn_mnu)
         lc_cntrsna = hashlib.md5(request.form['password'].encode('utf-8')).hexdigest()
@@ -96,8 +97,6 @@ class Usuarios(Resource):
             return Utils.nice_json({"error":u.errors},400)
         
         if val :
-            DatosUsuario = jwt.decode(token, conf.SS_TKN_SCRET_KEY, 'utf-8')
-            id_lgn_ge_ssn = validacionSeguridad.validaUsuario(DatosUsuario['lgn'])
             '''
                 Aqui insertamos los datos del usuario
             '''
@@ -134,7 +133,6 @@ class Usuarios(Resource):
             arrayValues['id']=str(id_lgn)
             self.UsuarioActualizaRegistro(arrayValues,'tblogins')
             
-            id_lgn_ge=self.UsuarioInsertaRegistro(arrayValues3,'tblogins_ge')
             return Utils.nice_json({"error":labels.SCCSS_RGSTRO_EXTSO},200)
             '''
             Fin de la insercion de los datos
@@ -145,7 +143,7 @@ class Usuarios(Resource):
     def ActualizarUsuario(self):
         token = request.headers['Authorization']
         fcha_actl = time.ctime()
-        ln_opcn_mnu = request.form["id_mnu"]
+        ln_opcn_mnu = request.form["id_mnu_ge"]
         validacionSeguridad = ValidacionSeguridad()
         val = validacionSeguridad.Principal(token,ln_opcn_mnu)
         Upload = UploadFiles()
@@ -154,8 +152,6 @@ class Usuarios(Resource):
         if not u.validate():
             return Utils.nice_json({"error":u.errors},400)
         if val :
-            DatosUsuario = jwt.decode(token, conf.SS_TKN_SCRET_KEY, 'utf-8')
-            id_lgn_ge_ssn = validacionSeguridad.validaUsuario(DatosUsuario['lgn'])
             md5 = hashlib.md5(request.form['password'].encode('utf-8')).hexdigest()
             
             '''
@@ -226,7 +222,6 @@ class Usuarios(Resource):
             mFile = UploadFiles(drccn_imgn,nmbre_archvo,crr_drccn)
             resultImageUpload = mFile.upload(file[cmpo])
             
-           # print(mFile.getExtensionFile(fullPath))
             
             #Check status uploadimage
             if resultImageUpload["status"] == "OK":

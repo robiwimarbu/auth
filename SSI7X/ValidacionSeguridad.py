@@ -67,7 +67,7 @@ class ValidacionSeguridad(Resource):
                                      " where c.estdo=true "\
                                      " and b.estdo=true "\
                                      " and a.estdo=true "\
-                                     " and e.id = "+str(id_mnu)+" and a.id_lgn_prfl_scrsl = "+str(id_lgn_prfl_scrsl))                   
+                                     " and d.id = "+str(id_mnu)+" and a.id_lgn_prfl_scrsl = "+str(id_lgn_prfl_scrsl))                   
             if Cursor:
                 return True
             else:
