@@ -19,7 +19,7 @@ import jwt #@UnresolvedImport
 from SSI7X.ValidacionSeguridad import ValidacionSeguridad # @UnresolvedImport
 
 '''
-Declaracion de variables globales
+Declaracion de variables globales.
 '''
 lc_cnctn = ConnectDB()
 Utils = Utils()
