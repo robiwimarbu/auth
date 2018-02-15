@@ -11,9 +11,10 @@ from wtforms import Form, validators, StringField , IntegerField
 from SSI7X.ValidacionSeguridad import ValidacionSeguridad  # @UnresolvedImport
 import SSI7X.Static.labels as labels # @UnresolvedImport
 import SSI7X.Static.errors as errors  # @UnresolvedImport
+import SSI7X.Static.opciones_higia as optns  # @UnresolvedImport
 import SSI7X.Static.config_DB as dbConf # @UnresolvedImport
 import SSI7X.Static.config as conf  # @UnresolvedImport
-import time,json
+import time,json,jwt
 
 ##clase de llamado para validar datos desde labels
 class DatosPerfil(Form):
@@ -48,7 +49,8 @@ class Perfiles(Resource):
         token = request.headers['Authorization']
         validacionSeguridad = ValidacionSeguridad()
         
-        if validacionSeguridad.Principal(token, ln_opcn_mnu):
+        
+        if validacionSeguridad.Principal(token,ln_opcn_mnu,optns.OPCNS_MNU['Perfiles']):
             DatosUsuarioToken = jwt.decode(token, conf.SS_TKN_SCRET_KEY, 'utf-8')
             datosUsuario = validacionSeguridad.ObtenerDatosUsuario(DatosUsuarioToken['lgn'])[0]
             arrayValues={}
@@ -75,7 +77,7 @@ class Perfiles(Resource):
         token = request.headers['Authorization']
         validacionSeguridad = ValidacionSeguridad()
         
-        if validacionSeguridad.Principal(token, ln_opcn_mnu):
+        if validacionSeguridad.Principal(token,ln_opcn_mnu,optns.OPCNS_MNU['Perfiles']):
             lc_dta = ''
             lc_cdgo  =''
             try:
@@ -89,10 +91,11 @@ class Perfiles(Resource):
                 lc_dta = lc_dta + "  and a.dscrpcn like '%" + lc_dscrpcn + "%' "
             except Exception:
                 pass  
-            ln_id_undd_ngco = str(3)
+            ln_id_undd_ngco = request.form["id_undd_ngco"]
             
             strSql = " select b.id, "\
-                                    " a.cdgo,a.dscrpcn "\
+                                    " a.cdgo ,a.dscrpcn "\
+                                    " ,case when b.estdo = true then 'ACTIVO' else 'INACTIVO' end as estdo "\
                                     " from "\
                                     " ssi7x.tbperfiles a inner join  ssi7x.tbperfiles_une b on "\
                                     " a.id=b.id_prfl "\

@@ -3,7 +3,6 @@ Created on 22/01/2018
 
 @author: CRISTIAN.BOTINA
 '''
-import json # @UnresolvedImport
 from flask_restful import request, Resource
 from wtforms import Form, validators, StringField
 import SSI7X.Static.config as conf  # @UnresolvedImport
@@ -11,7 +10,8 @@ from SSI7X.Static.ConnectDB import ConnectDB  # @UnresolvedImport
 from SSI7X.Static.Utils import Utils  # @UnresolvedImport
 import SSI7X.Static.errors as errors  # @UnresolvedImport
 import SSI7X.Static.labels as labels  # @UnresolvedImport
-import time,hashlib #@UnresolvedImport
+import SSI7X.Static.opciones_higia as optns  # @UnresolvedImport
+import time,hashlib,json #@UnresolvedImport
 from SSI7X.ValidacionSeguridad import ValidacionSeguridad # @UnresolvedImport
 import SSI7X.Static.config_DB as dbConf # @UnresolvedImport
 from SSI7X.Static.UploadFiles import UploadFiles  # @UnresolvedImport
@@ -37,37 +37,42 @@ class AcInsertarAcceso(Form):
 class Usuarios(Resource):
     
     def post(self, **kwargs):
-        if kwargs['page'] == 'listar_usuarios':
-            arrayParametros={}
-            arrayParametros['id_lgn_ge']=request.form['id_login_ge'] 
-            arrayParametros['lgn']=request.form['login']
-            return self.ObtenerUsuarios(arrayParametros)
+        if kwargs['page'] == 'ListarUsuarios':
+            return self.ObtenerUsuarios()
         elif kwargs['page'] == 'insertar_usuario':
             return self.InsertarUsuarios()
         elif kwargs['page'] == 'actualizar_usuario':
             return self.ActualizarUsuario()
     
-    def ObtenerUsuarios(self,parametros):
+    def ObtenerUsuarios(self):
         token = request.headers['Authorization']
         ln_opcn_mnu = request.form["id_mnu_ge"]
         validacionSeguridad = ValidacionSeguridad()
-        val = validacionSeguridad.Principal(token,ln_opcn_mnu)
+        val = validacionSeguridad.Principal(token,ln_opcn_mnu,optns.OPCNS_MNU['Usuarios'])
         
         prmtrs=''
-        if parametros:
-            id_lgn_ge = parametros['id_lgn_ge']
-            lgn = parametros['lgn']
-            id_grpo_emprsrl = '2'
-            if id_lgn_ge:
-                prmtrs = prmtrs + "  and a.id = " + id_lgn_ge
-            if lgn:
-                prmtrs = prmtrs + "  and lgn like '%" + lgn + "%' "
-            if id_grpo_emprsrl:
-                prmtrs = prmtrs + "  and id_grpo_emprsrl = " + id_grpo_emprsrl + " "
-                
+        
+        
+        
+        try:
+            id_lgn_ge = request.form['id_login_ge'] 
+            prmtrs = prmtrs + "  and a.id = " + id_lgn_ge
+        except Exception:
+            pass
+        try:
+            lgn = request.form['login']
+            prmtrs = prmtrs + "  and lgn like '%" + lgn + "%' "
+        except Exception:
+            pass
+        try:
+            id_grpo_emprsrl = request.form['id_grpo_emprsrl']
+            prmtrs = prmtrs + "  and id_grpo_emprsrl = " + id_grpo_emprsrl + " "
+        except Exception:
+            pass        
+        
         if val :
             Cursor = lc_cnctn.queryFree(" select "\
-                                    " a.id, b.lgn, b.nmbre_usro, b.fto_usro "\
+                                    " a.id, b.lgn, b.nmbre_usro, b.fto_usro, case when b.estdo = true then 'ACTIVO' else 'INACTIVO' end as estdo  "\
                                     " from "\
                                     " "+str(dbConf.DB_SHMA)+".tblogins_ge a inner join "+str(dbConf.DB_SHMA)+".tblogins b on "\
                                     " a.id_lgn = b.id "\
@@ -89,7 +94,7 @@ class Usuarios(Resource):
         fcha_actl = time.ctime()
         ln_opcn_mnu = request.form["id_mnu_ge"]
         validacionSeguridad = ValidacionSeguridad()
-        val = validacionSeguridad.Principal(token,ln_opcn_mnu)
+        val = validacionSeguridad.Principal(token,ln_opcn_mnu,optns.OPCNS_MNU['Usuarios'])
         lc_cntrsna = hashlib.md5(request.form['password'].encode('utf-8')).hexdigest()
         #Validar los campos requeridos.
         u = AcInsertarAcceso(request.form)
@@ -145,8 +150,7 @@ class Usuarios(Resource):
         fcha_actl = time.ctime()
         ln_opcn_mnu = request.form["id_mnu_ge"]
         validacionSeguridad = ValidacionSeguridad()
-        val = validacionSeguridad.Principal(token,ln_opcn_mnu)
-        Upload = UploadFiles()
+        val = validacionSeguridad.Principal(token,ln_opcn_mnu,optns.OPCNS_MNU['Usuarios'])
         #Validar los campos requeridos.
         u = ActualizarAcceso(request.form)
         if not u.validate():
