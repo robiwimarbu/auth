@@ -12,6 +12,7 @@ import SSI7X.Static.labels as labels  # @UnresolvedImport
 import SSI7X.Static.opciones_higia as optns  # @UnresolvedImport
 import SSI7X.Static.config_DB as dbConf # @UnresolvedImport   
 import SSI7X.Static.config as conf  # @UnresolvedImport 
+import SSI7X.Static.opciones_higia as optns  # @UnresolvedImport
 import time,json,jwt
 from SSI7X.ValidacionSeguridad import ValidacionSeguridad  # @UnresolvedImport
 
@@ -22,6 +23,7 @@ Utils = Utils()
 validacionSeguridad = ValidacionSeguridad()
 fecha_act = time.ctime()
 C = ConnectDB()
+
 
 class Acceso(Form):
     cdgo = StringField(labels.lbl_cdgo,[validators.DataRequired(message=errors.ERR_NO_CDGO_PRGNTA)])
@@ -129,7 +131,7 @@ class Preguntas(Resource):
         token = request.headers['Authorization']
         ln_opcn_mnu = request.form["id_mnu_ge"]
         validacionSeguridad = ValidacionSeguridad()
-        val = validacionSeguridad.Principal(token,ln_opcn_mnu)
+        val = validacionSeguridad.Principal(token,ln_opcn_mnu,optns.OPCNS_MNU['PreguntaSg'])
         u = ActualizarAcceso(request.form)
         if not u.validate():
             return Utils.nice_json({"error":u.errors},400)
