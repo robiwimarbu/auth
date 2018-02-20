@@ -9,6 +9,7 @@ from SSI7X.Static.ConnectDB import ConnectDB  # @UnresolvedImport
 from SSI7X.Static.Utils import Utils  # @UnresolvedImport
 import SSI7X.Static.errors as errors  # @UnresolvedImport
 import SSI7X.Static.labels as labels  # @UnresolvedImport
+import SSI7X.Static.opciones_higia as optns  # @UnresolvedImport
 import SSI7X.Static.config_DB as dbConf # @UnresolvedImport   
 import SSI7X.Static.config as conf  # @UnresolvedImport 
 import time,json,jwt
@@ -49,7 +50,7 @@ class Preguntas(Resource):
         ln_opcn_mnu = request.form["id_mnu_ge"]
         token = request.headers['Authorization']
         validacionSeguridad = ValidacionSeguridad()
-        val = validacionSeguridad.Principal(token,ln_opcn_mnu)
+        val = validacionSeguridad.Principal(token,ln_opcn_mnu,optns.OPCNS_MNU['PreguntaSg'])
         u=Acceso(request.form)
         if not u.validate():
             return self.Utils.nice_json({"error":u.errors},400)
@@ -81,7 +82,7 @@ class Preguntas(Resource):
         ln_opcn_mnu = request.form["id_mnu_ge"]
         token = request.headers['Authorization']
         validacionSeguridad = ValidacionSeguridad()
-        val = validacionSeguridad.Principal(token,ln_opcn_mnu)
+        val = validacionSeguridad.Principal(token,ln_opcn_mnu,optns.OPCNS_MNU['PreguntaSg'])
         arrayParametros={}
         prmtrs=''
         try:
@@ -166,4 +167,3 @@ class Preguntas(Resource):
     
     def PreguntaActualizaRegistro(self,objectValues,table_name):
         return C.queryUpdate(dbConf.DB_SHMA+"."+str(table_name), objectValues,'id='+str(objectValues['id']))
-    
